@@ -9,8 +9,6 @@ import android.text.TextWatcher
 import android.widget.Button
 import android.widget.TextView
 import com.google.android.material.textfield.TextInputEditText
-import androidx.core.content.ContextCompat
-import com.google.android.material.textfield.TextInputLayout
 
 class MainActivity : AppCompatActivity() {
 
@@ -31,7 +29,7 @@ class MainActivity : AppCompatActivity() {
 
         tv_CrearCuenta.setOnClickListener {startActivity(Intent(this, CrearCuenta::class.java)) }
 
-        tv_ReestablecerClave.setOnClickListener {startActivity(Intent(this, ReestablecerClave::class.java))}
+        tv_ReestablecerClave.setOnClickListener {startActivity(Intent(this, RestablecerClave::class.java))}
 
         et_Rut.addTextChangedListener(textWatcher)
         et_Contraseña.addTextChangedListener(textWatcher)
@@ -80,6 +78,8 @@ class MainActivity : AppCompatActivity() {
                 val rutPattern = Regex("^[0-9]{7,8}-[0-9kK]$")
                 if (userInput.length !in 9..10) {
                     et_Rut.error = "RUT no valido."
+                } else if (!userInput.matches(rutPattern)) {
+                    et_Rut.error = "El RUT no tiene el formato correcto."
                 } else {
                     et_Rut.error = null
                 }
@@ -89,7 +89,6 @@ class MainActivity : AppCompatActivity() {
 
         b_iniciarSesion.isEnabled = false
         b_iniciarSesion.setOnClickListener {startActivity(Intent(this, MenuPrincipal::class.java)) }
-
 
     }
     private val textWatcher = object : TextWatcher {
@@ -108,7 +107,6 @@ class MainActivity : AppCompatActivity() {
             updateButtonEnabledState()
         }
     }
-
     private fun updateButtonEnabledState() {
         val rut = et_Rut.text.toString().trim()
         val contraseña = et_Contraseña.text.toString().trim()
@@ -117,7 +115,6 @@ class MainActivity : AppCompatActivity() {
         val minLength = 8
         val isContraseñaValid = contraseña.length >= minLength && contraseña[0].isUpperCase() &&
                 contraseña.matches(".*[0-9].*".toRegex()) && contraseña.matches(".*[^A-Za-z0-9].*".toRegex())
-
 
         b_iniciarSesion.isEnabled = isRutValid && isContraseñaValid
     }

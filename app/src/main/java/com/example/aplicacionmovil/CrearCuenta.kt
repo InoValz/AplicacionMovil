@@ -6,7 +6,9 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.InputFilter
 import android.text.TextWatcher
+import android.view.View
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import com.google.android.material.textfield.TextInputEditText
@@ -18,6 +20,7 @@ class CrearCuenta : AppCompatActivity() {
     private lateinit var et_Correo: TextInputEditText
     private lateinit var et_Contraseña: TextInputEditText
     private lateinit var b_CrearCuenta: Button
+    private lateinit var im_back: ImageButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +30,7 @@ class CrearCuenta : AppCompatActivity() {
 
         val tv_IniciarSesion = findViewById<TextView>(R.id.tv_IniciarSesion)
 
+        im_back = findViewById(R.id.im_back)
         et_Nombre = findViewById(R.id.et_Nombre)
         et_Rut = findViewById(R.id.et_Rut)
         et_Correo = findViewById(R.id.et_Correo)
@@ -45,6 +49,12 @@ class CrearCuenta : AppCompatActivity() {
             startActivity(Intent(this, MainActivity::class.java))
             Toast.makeText(this, "Cuenta creada con éxito, inicie sesión.", Toast.LENGTH_SHORT).show()
         }
+
+        val botonBack: ImageButton = findViewById(R.id.im_back)
+        botonBack.setOnClickListener(View.OnClickListener {
+            val intent = Intent(this, MainActivity::class.java)
+            startActivity(intent)
+        })
 
         val rutFilter = InputFilter { source, start, end, _, _, _ ->
             val input = source.subSequence(start, end).toString()
