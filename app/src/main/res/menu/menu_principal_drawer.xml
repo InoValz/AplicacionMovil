@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group>
+        <item
+            android:id="@+id/nav_item_uno"
+            android:icon="@drawable/abc_vector_test"
+            android:title="Item 1:"/>
+        <item
+            android:id="@+id/nav_item_dos"
+            android:icon="@drawable/abc_vector_test"
+            android:title="Item 2:"/>
+        <item
+            android:id="@+id/nav_item_tres"
+            android:icon="@drawable/abc_vector_test"
+            android:title="Item 3:"/>
+    </group>
+
+    <item
+        android:title="Title 1">
+        <menu>
+            <item
+                android:id="@+id/nav_item_cuatro"
+                android:icon="@drawable/abc_vector_test"
+                android:title="Item 4:"/>
+            <item
+                android:id="@+id/nav_item_cinco"
+                android:icon="@drawable/abc_vector_test"
+                android:title="Item 5:"/>
+        </menu>
+    </item>
+</menu>
