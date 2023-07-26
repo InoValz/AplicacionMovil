@@ -78,6 +78,7 @@ class CrearCuenta : AppCompatActivity() {
                                             Toast.makeText(this, "Cuenta creada con éxito, inicie sesión.", Toast.LENGTH_SHORT).show()
                                             val intent = Intent(this, MainActivity::class.java)
                                             startActivity(intent)
+                                            finish()
                                         } else {
                                             Toast.makeText(this, "Error al crear la cuenta. Por favor, intenta nuevamente.", Toast.LENGTH_SHORT).show()
                                         }

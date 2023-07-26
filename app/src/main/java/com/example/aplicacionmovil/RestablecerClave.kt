@@ -1,14 +1,14 @@
 package com.example.aplicacionmovil
 
-import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.View
 import android.widget.Button
 import android.widget.ImageButton
+import android.widget.Toast
 import com.google.android.material.textfield.TextInputEditText
+import com.google.firebase.auth.FirebaseAuth
 
 class RestablecerClave : AppCompatActivity() {
 
@@ -26,11 +26,30 @@ class RestablecerClave : AppCompatActivity() {
 
         et_Correo2.addTextChangedListener(textWatcher)
 
-        val botonBack: ImageButton = findViewById(R.id.im_back2)
-        botonBack.setOnClickListener(View.OnClickListener {
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
-        })
+        im_back2.setOnClickListener {
+            finish()
+        }
+
+        b_Enviar.setOnClickListener {
+            val correo = et_Correo2.text.toString().trim()
+
+            if (correo.isNotEmpty()) {
+                val auth = FirebaseAuth.getInstance()
+
+                auth.sendPasswordResetEmail(correo)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            // Correo de restablecimiento enviado con éxito
+                            Toast.makeText(this, "Se ha enviado un correo de restablecimiento a $correo", Toast.LENGTH_SHORT).show()
+                        } else {
+                            // Hubo un error al enviar el correo de restablecimiento
+                            Toast.makeText(this, "Error al enviar el correo de restablecimiento. Por favor, intenta nuevamente.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+            } else {
+                Toast.makeText(this, "Por favor, ingresa tu correo electrónico.", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         b_Enviar.isEnabled = false
 

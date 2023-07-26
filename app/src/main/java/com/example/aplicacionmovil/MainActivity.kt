@@ -1,6 +1,8 @@
 package com.example.aplicacionmovil
 
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
@@ -29,6 +31,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val auth = FirebaseAuth.getInstance()
+
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            // El usuario ya está autenticado, redirigir a la actividad principal
+            startActivity(Intent(this, MenuPrincipal::class.java))
+            finish() // Cerrar la actividad actual para que el usuario no pueda regresar a esta pantalla presionando "Atrás"
+        }
 
         val tv_CrearCuenta = findViewById<TextView>(R.id.tv_CrearCuenta)
         val tv_ReestablecerClave = findViewById<TextView>(R.id.tv_ReestablecerClave)
@@ -108,6 +117,11 @@ class MainActivity : AppCompatActivity() {
                 auth.signInWithEmailAndPassword(correo, contraseña)
                     .addOnCompleteListener(this) { task ->
                         if (task.isSuccessful) {
+                            val user = auth.currentUser
+                            if (user != null) {
+                                val userId = user.uid
+                                saveUserId(userId)
+                            }
                             // Inicio de sesión exitoso, redirigir a la siguiente actividad
                             val intent = Intent(this, MenuPrincipal::class.java)
                             startActivity(intent)
@@ -140,6 +154,13 @@ class MainActivity : AppCompatActivity() {
             b_iniciarSesion.isEnabled = correo.isNotEmpty() && contraseña.isNotEmpty()
 
         }
+    }
+
+    private fun saveUserId(userId: String) {
+        val sharedPreferences: SharedPreferences = getSharedPreferences("Preferencias", Context.MODE_PRIVATE)
+        val editor: SharedPreferences.Editor = sharedPreferences.edit()
+        editor.putString("UserId", userId)
+        editor.apply()
     }
 
 }

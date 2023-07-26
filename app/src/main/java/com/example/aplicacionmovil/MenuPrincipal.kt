@@ -1,5 +1,6 @@
 package com.example.aplicacionmovil
 
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatActivity
@@ -10,6 +11,7 @@ import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.auth.FirebaseAuth
 
 class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener{
 
@@ -47,7 +49,15 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 val intent = Intent(this, Mapa::class.java)
                 startActivity(intent)
             }
-            R.id.nav_foro -> Toast.makeText(this, "Foro", Toast.LENGTH_SHORT).show()
+            R.id.nav_foro -> {
+                Toast.makeText(this, "Foro", Toast.LENGTH_SHORT).show()
+            }
+            R.id.nav_cerrar_sesion -> {
+                signOut() // Llama a la función para cerrar sesión
+                val intent = Intent(this, MainActivity::class.java)
+                startActivity(intent)
+                finish() // Cierra la actividad actual para evitar que el usuario regrese presionando "Atrás"
+            }
         }
 
         drawer.closeDrawer(GravityCompat.START)
@@ -71,4 +81,13 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
         return super.onOptionsItemSelected(item)
     }
+
+    private fun signOut() {
+        FirebaseAuth.getInstance().signOut()
+        // Borra el ID del usuario de las preferencias compartidas
+        val sharedPreferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+        sharedPreferences.edit().remove("UserId").apply()
+    }
+
+
 }
