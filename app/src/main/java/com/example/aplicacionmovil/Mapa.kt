@@ -1,5 +1,6 @@
 package com.example.aplicacionmovil
 
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +17,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.auth.FirebaseAuth
 
 class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener,
     OnMapReadyCallback {
@@ -56,7 +58,16 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
                 val intent = Intent(this, Mapa::class.java)
                 startActivity(intent)
             }
-            R.id.nav_foro2 -> Toast.makeText(this, "Foro", Toast.LENGTH_SHORT).show()
+            R.id.nav_foro2 -> {
+                Toast.makeText(this, "Foro", Toast.LENGTH_SHORT).show()
+            }
+            R.id.nav_cerrar_sesion2 -> {
+                signOut() // Llama a la función para cerrar sesión
+                val intent = Intent(this, MainActivity::class.java)
+                startActivity(intent)
+                Toast.makeText(this, "Sesión Cerrada", Toast.LENGTH_SHORT).show()
+                finish() // Cierra la actividad actual para evitar que el usuario regrese presionando "Atrás"
+            }
         }
 
         drawer.closeDrawer(GravityCompat.START)
@@ -85,7 +96,6 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
             null
         )
     }
-
         override fun onPostCreate(savedInstanceState: Bundle?) {
             super.onPostCreate(savedInstanceState)
             toggle.syncState()
@@ -103,4 +113,12 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
 
             return super.onOptionsItemSelected(item)
         }
+
+    private fun signOut() {
+        FirebaseAuth.getInstance().signOut()
+        // Borra el ID del usuario de las preferencias compartidas
+        val sharedPreferences = getSharedPreferences("Preferencias", Context.MODE_PRIVATE)
+        sharedPreferences.edit().remove("UserId").apply()
+    }
+
     }
