@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".CrearCuenta">
+    tools:context=".CrearCuenta"
+    >
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -53,7 +54,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            >
 
             <!-- EDIT TEXT NOMBRE -->
             <com.google.android.material.textfield.TextInputLayout
@@ -63,14 +65,16 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
+                app:layout_constraintTop_toTopOf="parent"
+                >
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_Nombre"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Nombre"
-                    android:inputType="text" />
+                    android:inputType="text"
+                    />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- EDIT TEXT RUT -->
@@ -87,6 +91,7 @@
                     android:id="@+id/et_Rut"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+
                     android:hint="Rut" />
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -133,7 +138,7 @@
                 android:layout_width="150dp"
                 android:layout_height="50dp"
                 android:layout_margin="15dp"
-                android:backgroundTint="@color/morado"
+                android:backgroundTint="#3A9BB8"
                 android:text="Crear cuenta" />
 
         </LinearLayout>

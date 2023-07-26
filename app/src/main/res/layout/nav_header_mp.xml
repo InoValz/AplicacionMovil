@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="160dp"
     android:id="@+id/nav_header"
-    android:background="#8A7CAF"
+    android:background="#3A9BB8"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackgroundBorderless"
@@ -15,9 +15,9 @@
 
     <ImageView
         android:id="@+id/nav_header_imageView"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:src="@drawable/security"/>
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@drawable/icon"/>
         
     <TextView
         android:id="@+id/nav_header_textView"
