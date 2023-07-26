@@ -8,22 +8,33 @@ import android.text.InputFilter
 import android.text.TextWatcher
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import com.google.android.material.textfield.TextInputEditText
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var et_Rut: TextInputEditText
+    //private lateinit var et_Rut: TextInputEditText
+    private lateinit var et_Correo: TextInputEditText
     private lateinit var et_Contraseña: TextInputEditText
     private lateinit var b_iniciarSesion: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
         setContentView(R.layout.activity_main)
+
+        val auth = FirebaseAuth.getInstance()
 
         val tv_CrearCuenta = findViewById<TextView>(R.id.tv_CrearCuenta)
         val tv_ReestablecerClave = findViewById<TextView>(R.id.tv_ReestablecerClave)
 
-        et_Rut = findViewById(R.id.et_Rut)
+        //et_Rut = findViewById(R.id.et_Rut)
+        et_Correo = findViewById(R.id.et_Correo)
         et_Contraseña = findViewById(R.id.et_Contraseña)
         b_iniciarSesion = findViewById(R.id.b_iniciarSesion)
 
@@ -31,10 +42,11 @@ class MainActivity : AppCompatActivity() {
 
         tv_ReestablecerClave.setOnClickListener {startActivity(Intent(this, RestablecerClave::class.java))}
 
-        et_Rut.addTextChangedListener(textWatcher)
+        //et_Rut.addTextChangedListener(textWatcher)
+        et_Correo.addTextChangedListener(textWatcher)
         et_Contraseña.addTextChangedListener(textWatcher)
 
-        val rutFilter = InputFilter { source, start, end, _, _, _ ->
+        /*val rutFilter = InputFilter { source, start, end, _, _, _ ->
             val input = source.subSequence(start, end).toString()
             val allowedChars = "0123456789kK-"
             val validInput = input.filter { allowedChars.contains(it) }
@@ -46,7 +58,7 @@ class MainActivity : AppCompatActivity() {
             }
             validInput
         }
-        et_Rut.filters = arrayOf(rutFilter)
+        et_Rut.filters = arrayOf(rutFilter)*/
 
         et_Contraseña.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -62,11 +74,11 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     et_Contraseña.error = null
                 }
-                updateButtonEnabledState()
+
             }
         })
 
-        et_Rut.addTextChangedListener(object : TextWatcher {
+        /*et_Rut.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
             }
 
@@ -85,12 +97,34 @@ class MainActivity : AppCompatActivity() {
                 }
                 updateButtonEnabledState()
             }
-        })
+        })*/
 
-        b_iniciarSesion.isEnabled = false
-        b_iniciarSesion.setOnClickListener {startActivity(Intent(this, MenuPrincipal::class.java)) }
+        b_iniciarSesion.setOnClickListener {
+            val correo = et_Correo.text.toString().trim()
+            val contraseña = et_Contraseña.text.toString().trim()
+
+            if (correo.isNotEmpty() && contraseña.isNotEmpty()) {
+                // Iniciar sesión con Firebase Authentication
+                auth.signInWithEmailAndPassword(correo, contraseña)
+                    .addOnCompleteListener(this) { task ->
+                        if (task.isSuccessful) {
+                            // Inicio de sesión exitoso, redirigir a la siguiente actividad
+                            val intent = Intent(this, MenuPrincipal::class.java)
+                            startActivity(intent)
+                            finish() // Cerrar la actividad actual para que el usuario no pueda regresar a esta pantalla presionando "Atrás"
+                        } else {
+                            // Hubo un error durante el inicio de sesión
+                            val error = task.exception?.message
+                            Toast.makeText(this, "Error: $error", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+            } else {
+                Toast.makeText(this, "Por favor, ingresa tu correo y contraseña.", Toast.LENGTH_SHORT).show()
+            }
+        }
 
     }
+
     private val textWatcher = object : TextWatcher {
         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
         }
@@ -99,23 +133,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun afterTextChanged(s: Editable?) {
-            val input1 = et_Rut.text.toString().trim()
-            val input2 = et_Contraseña.text.toString().trim()
+            //val input1 = et_Rut.text.toString().trim()
+            val correo = et_Correo.text.toString().trim()
+            val contraseña = et_Contraseña.text.toString().trim()
 
-            b_iniciarSesion.isEnabled = input1.isNotEmpty() && input2.isNotEmpty()
+            b_iniciarSesion.isEnabled = correo.isNotEmpty() && contraseña.isNotEmpty()
 
-            updateButtonEnabledState()
         }
     }
-    private fun updateButtonEnabledState() {
-        val rut = et_Rut.text.toString().trim()
-        val contraseña = et_Contraseña.text.toString().trim()
 
-        val isRutValid = rut.length in 9..10 && rut.matches("^[0-9]{7,8}-[0-9kK]$".toRegex())
-        val minLength = 8
-        val isContraseñaValid = contraseña.length >= minLength && contraseña[0].isUpperCase() &&
-                contraseña.matches(".*[0-9].*".toRegex()) && contraseña.matches(".*[^A-Za-z0-9].*".toRegex())
-
-        b_iniciarSesion.isEnabled = isRutValid && isContraseñaValid
-    }
 }

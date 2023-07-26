@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "106145025199",
+    "project_id": "appmapeo-54fac",
+    "storage_bucket": "appmapeo-54fac.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:106145025199:android:713427246a0222bab0585a",
+        "android_client_info": {
+          "package_name": "com.example.aplicacionmovil"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "106145025199-2e4lsj8o6cpkehuu87vidcd7p7g4p51s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBj4780O5D1ZAtWrYdgwSATxyiSUYLDvmM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "106145025199-2e4lsj8o6cpkehuu87vidcd7p7g4p51s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

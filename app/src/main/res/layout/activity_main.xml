@@ -53,10 +53,10 @@
             >
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/et_Rut"
+                android:id="@+id/et_Correo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Ingrese Rut"
+                android:hint="Ingrese Correo"
                 android:textColorHighlight="#3A9BB8"
                 android:textColorLink="#3A9BB8" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -95,7 +95,6 @@
                 android:layout_margin="15dp"
                 android:backgroundTint="#3A9BB8"
                 android:text="Iniciar Sesión"
-                android:enabled="false"
                 />
         </LinearLayout>
     </LinearLayout>
