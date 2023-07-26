@@ -1,5 +1,6 @@
 package com.example.aplicacionmovil
 
+import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -49,49 +50,6 @@ class CrearCuenta : AppCompatActivity() {
         et_Rut.addTextChangedListener(textWatcher)
         et_Correo.addTextChangedListener(textWatcher)
         et_Contraseña.addTextChangedListener(textWatcher)
-
-        b_CrearCuenta.isEnabled = false
-        b_CrearCuenta.setOnClickListener {
-            val nombre = et_Nombre.text.toString().trim()
-            val rut = et_Rut.text.toString().trim()
-            val correo = et_Correo.text.toString().trim()
-            val contraseña = et_Contraseña.text.toString().trim()
-
-            if (nombre.isNotEmpty() && rut.isNotEmpty() && correo.isNotEmpty() && contraseña.isNotEmpty()) {
-                // Crear usuario en Firebase Authentication
-                auth.createUserWithEmailAndPassword(correo, contraseña)
-                    .addOnCompleteListener(this) { task ->
-                        if (task.isSuccessful) {
-                            val user = auth.currentUser
-                            val uid = user?.uid
-
-                            // Crear un objeto para el usuario
-                            val usuario = Cuenta(nombre, rut, correo)
-
-                            // Guardar el usuario en la base de datos utilizando el UID como clave
-                            if (uid != null) {
-                                val database: FirebaseDatabase = FirebaseDatabase.getInstance()
-                                val databaseReference: DatabaseReference = database.reference.child("usuarios").child(uid)
-                                databaseReference.setValue(usuario)
-                                    .addOnCompleteListener { task ->
-                                        if (task.isSuccessful) {
-                                            Toast.makeText(this, "Cuenta creada con éxito, inicie sesión.", Toast.LENGTH_SHORT).show()
-                                            val intent = Intent(this, MainActivity::class.java)
-                                            startActivity(intent)
-                                            finish()
-                                        } else {
-                                            Toast.makeText(this, "Error al crear la cuenta. Por favor, intenta nuevamente.", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                            }
-                        } else {
-                            // Hubo un error durante la creación de cuenta
-                            val error = task.exception?.message
-                            Toast.makeText(this, "Error: $error", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-            }
-        }
 
         val botonBack: ImageButton = findViewById(R.id.im_back)
         botonBack.setOnClickListener(View.OnClickListener {
@@ -156,6 +114,50 @@ class CrearCuenta : AppCompatActivity() {
                 updateButtonEnabledState()
             }
         })
+
+        b_CrearCuenta.isEnabled = false
+        b_CrearCuenta.setOnClickListener {
+            val nombre = et_Nombre.text.toString().trim()
+            val rut = et_Rut.text.toString().trim()
+            val correo = et_Correo.text.toString().trim()
+            val contraseña = et_Contraseña.text.toString().trim()
+
+            if (nombre.isNotEmpty() && rut.isNotEmpty() && correo.isNotEmpty() && contraseña.isNotEmpty()) {
+                // Crear usuario en Firebase Authentication
+                auth.createUserWithEmailAndPassword(correo, contraseña)
+                    .addOnCompleteListener(this) { task ->
+                        if (task.isSuccessful) {
+                            val user = auth.currentUser
+                            val uid = user?.uid
+
+                            // Crear un objeto para el usuario
+                            val usuario = Cuenta(nombre, rut, correo)
+
+                            // Guardar el usuario en la base de datos utilizando el UID como clave
+                            if (uid != null) {
+                                val database: FirebaseDatabase = FirebaseDatabase.getInstance()
+                                val databaseReference: DatabaseReference = database.reference.child("usuarios").child(uid)
+                                databaseReference.setValue(usuario)
+                                    .addOnCompleteListener { task ->
+                                        if (task.isSuccessful) {
+                                            Toast.makeText(this, "Cuenta creada con éxito, inicie sesión.", Toast.LENGTH_SHORT).show()
+                                            val intent = Intent(this, MainActivity::class.java)
+                                            startActivity(intent)
+                                            signOut()
+                                            finish()
+                                        } else {
+                                            Toast.makeText(this, "Error al crear la cuenta. Por favor, intenta nuevamente.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                            }
+                        } else {
+                            // Hubo un error durante la creación de cuenta
+                            val error = task.exception?.message
+                            Toast.makeText(this, "Error: $error", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+            }
+        }
     }
 
     private val textWatcher = object : TextWatcher {
@@ -184,6 +186,13 @@ class CrearCuenta : AppCompatActivity() {
 
 
         b_CrearCuenta.isEnabled = isNombreValid && isRutValid && isCorreoValid && isContraseñaValid
+    }
+
+    private fun signOut() {
+        FirebaseAuth.getInstance().signOut()
+        // Borra el ID del usuario de las preferencias compartidas
+        val sharedPreferences = getSharedPreferences("Preferencias", Context.MODE_PRIVATE)
+        sharedPreferences.edit().remove("UserId").apply()
     }
 
 }
