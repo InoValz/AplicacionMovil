@@ -10,9 +10,13 @@
             android:icon="@drawable/abc_vector_test"
             android:title="Mapa"/>
         <item
-            android:id="@+id/nav_foro"
+            android:id="@+id/nav_notificaciones"
             android:icon="@drawable/abc_vector_test"
-            android:title="Foro"/>
+            android:title="Notificaciones"/>
+        <item
+            android:id="@+id/nav_MisSectores"
+            android:icon="@drawable/abc_vector_test"
+            android:title="Mis Sectores"/>
     </group>
 
     <item

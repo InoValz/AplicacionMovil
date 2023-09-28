@@ -58,8 +58,11 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
                 val intent = Intent(this, Mapa::class.java)
                 startActivity(intent)
             }
-            R.id.nav_foro2 -> {
-                Toast.makeText(this, "Foro", Toast.LENGTH_SHORT).show()
+            R.id.nav_notificaciones -> {
+                Toast.makeText(this, "Notificaciones", Toast.LENGTH_SHORT).show()
+            }
+            R.id.nav_MisSectores -> {
+                Toast.makeText(this, "Mis Sectores", Toast.LENGTH_SHORT).show()
             }
             R.id.nav_cerrar_sesion2 -> {
                 signOut() // Llama a la función para cerrar sesión

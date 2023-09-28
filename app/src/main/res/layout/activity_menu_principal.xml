@@ -9,13 +9,11 @@
     tools:context=".MenuPrincipal"
     tools:openDrawer="start"
     >
-
     <include
         layout="@layout/app_bar_mp"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         />
-
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav_view"
         android:layout_width="match_parent"
@@ -24,5 +22,5 @@
         app:headerLayout="@layout/nav_header_mp"
         app:menu="@menu/menu_principal_drawer"
         />
-
 </androidx.drawerlayout.widget.DrawerLayout>
+
