@@ -44,7 +44,7 @@
         android:id="@+id/btnFecha"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Seleccionar Fecha"
+        android:text="Fecha"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editTextUbicacion" />
@@ -54,10 +54,20 @@
         android:id="@+id/btnHora"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Seleccionar Hora"
+        android:text="Hora"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btnFecha" />
+
+    <!-- Categoria -->
+    <Button
+        android:id="@+id/btnCategoria"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Categoria"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnHora" />
 
     <!-- Botón para publicar -->
     <Button
@@ -68,6 +78,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnHora" />
+        app:layout_constraintTop_toBottomOf="@+id/btnCategoria" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
