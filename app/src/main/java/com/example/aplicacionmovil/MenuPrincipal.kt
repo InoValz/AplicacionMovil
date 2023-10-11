@@ -1,5 +1,6 @@
 package com.example.aplicacionmovil
 
+import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.Dialog
 import android.app.TimePickerDialog
@@ -116,7 +117,7 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     private fun mostrarDialogoPublicacion() {
         // Crear un diálogo personalizado
         val dialog = Dialog(this)
-        dialog.setContentView(R.layout.dialog_pubicacion)
+        dialog.setContentView(R.layout.dialog_publicacion)
 
         // Configuraciones adicionales para centrar el diálogo
         val layoutParams = WindowManager.LayoutParams()
@@ -132,14 +133,50 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         val editTextDescripcion = dialog.findViewById<EditText>(R.id.editTextDescripcion)
         val editTextUbicacion = dialog.findViewById<EditText>(R.id.editTextUbicacion)
         val btnFecha = dialog.findViewById<Button>(R.id.btnFecha)
-        btnFecha.setOnClickListener {
-            mostrarDatePickerDialog()
-        }
+            btnFecha.setOnClickListener {
+                mostrarDatePickerDialog()
+                val calendar = Calendar.getInstance()
+                val year = calendar.get(Calendar.YEAR)
+                val month = calendar.get(Calendar.MONTH)
+                val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
+
+                val datePickerDialog = DatePickerDialog(this, DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
+                    // Formatea la fecha seleccionada como desees, aquí se usa el formato dd/MM/yyyy
+                    selectedDate = String.format("%02d/%02d/%04d", dayOfMonth, month + 1, year)
+                    // Muestra la fecha en el botón o en otro lugar si lo prefieres
+                    btnFecha.text = selectedDate
+                }, year, month, dayOfMonth)
+                datePickerDialog.show()
+            }
         val btnHora = dialog.findViewById<Button>(R.id.btnHora)
-        btnHora.setOnClickListener {
-            mostrarTimePickerDialog()
-        }
+            btnHora.setOnClickListener {
+                mostrarTimePickerDialog()
+                val calendar = Calendar.getInstance()
+                val hourOfDay = calendar.get(Calendar.HOUR_OF_DAY)
+                val minute = calendar.get(Calendar.MINUTE)
+
+                val timePickerDialog = TimePickerDialog(this, TimePickerDialog.OnTimeSetListener { _, hourOfDay, minute ->
+                    // Formatea la hora seleccionada como desees, aquí se usa el formato HH:mm
+                    selectedTime = String.format("%02d:%02d", hourOfDay, minute)
+                    // Muestra la hora en el botón o en otro lugar si lo prefieres
+                    btnHora.text = selectedTime
+                }, hourOfDay, minute, true)
+                timePickerDialog.show()
+            }
         val btnCategoria = dialog.findViewById<Button>(R.id.btnCategoria)
+            btnCategoria.setOnClickListener{
+                mostrarMenuCategorias()
+                val categorias = arrayOf("Categoría 1", "Categoría 2", "Categoría 3", "Categoría 4") // Define tus categorías aquí
+
+                val builder = AlertDialog.Builder(this)
+                builder.setTitle("Selecciona una categoría")
+                    .setItems(categorias) { _, which ->
+                        val categoriaSeleccionada = categorias[which]
+                        // Realiza acciones con la categoría seleccionada, por ejemplo, mostrarla en el botón
+                        btnCategoria.text = categoriaSeleccionada
+                    }
+                builder.create().show()
+            }
         val btnPublicar = dialog.findViewById<Button>(R.id.btnPublicar)
 
         // Configurar la acción del botón de publicación
@@ -185,33 +222,12 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     }
 
     private fun mostrarDatePickerDialog() {
-        val calendar = Calendar.getInstance()
-        val year = calendar.get(Calendar.YEAR)
-        val month = calendar.get(Calendar.MONTH)
-        val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
-
-        val datePickerDialog = DatePickerDialog(this, DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
-            // Formatea la fecha seleccionada como desees, aquí se usa el formato dd/MM/yyyy
-            selectedDate = String.format("%02d/%02d/%04d", dayOfMonth, month + 1, year)
-            // Muestra la fecha en el botón o en otro lugar si lo prefieres
-            btnFecha.text = selectedDate
-        }, year, month, dayOfMonth)
-        datePickerDialog.show()
     }
-
     private fun mostrarTimePickerDialog() {
-        val calendar = Calendar.getInstance()
-        val hourOfDay = calendar.get(Calendar.HOUR_OF_DAY)
-        val minute = calendar.get(Calendar.MINUTE)
-
-        val timePickerDialog = TimePickerDialog(this, TimePickerDialog.OnTimeSetListener { _, hourOfDay, minute ->
-            // Formatea la hora seleccionada como desees, aquí se usa el formato HH:mm
-            selectedTime = String.format("%02d:%02d", hourOfDay, minute)
-            // Muestra la hora en el botón o en otro lugar si lo prefieres
-            btnHora.text = selectedTime
-        }, hourOfDay, minute, true)
-        timePickerDialog.show()
     }
+    private fun mostrarMenuCategorias() {
+    }
+
 
 
 }
