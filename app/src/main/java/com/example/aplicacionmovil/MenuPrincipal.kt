@@ -21,8 +21,10 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Calendar
+
 
 
 class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener{
@@ -37,7 +39,10 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseFirestore.getInstance()
         setContentView(R.layout.activity_menu_principal)
+
+        val database = FirebaseDatabase.getInstance()
 
         btnToolbar = findViewById(R.id.btn_toolbar)
         btnToolbar.setOnClickListener {
@@ -132,6 +137,7 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         val editTextTitulo = dialog.findViewById<EditText>(R.id.editTextTitulo)
         val editTextDescripcion = dialog.findViewById<EditText>(R.id.editTextDescripcion)
         val editTextUbicacion = dialog.findViewById<EditText>(R.id.editTextUbicacion)
+
         val btnFecha = dialog.findViewById<Button>(R.id.btnFecha)
             btnFecha.setOnClickListener {
                 mostrarDatePickerDialog()
@@ -164,6 +170,7 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 timePickerDialog.show()
             }
         val btnCategoria = dialog.findViewById<Button>(R.id.btnCategoria)
+        var categoriaSeleccionada: String = ""
             btnCategoria.setOnClickListener{
                 mostrarMenuCategorias()
                 val categorias = arrayOf("Categoría 1", "Categoría 2", "Categoría 3", "Categoría 4") // Define tus categorías aquí
@@ -171,12 +178,12 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 val builder = AlertDialog.Builder(this)
                 builder.setTitle("Selecciona una categoría")
                     .setItems(categorias) { _, which ->
-                        val categoriaSeleccionada = categorias[which]
-                        // Realiza acciones con la categoría seleccionada, por ejemplo, mostrarla en el botón
+                        categoriaSeleccionada = categorias[which]
                         btnCategoria.text = categoriaSeleccionada
                     }
                 builder.create().show()
             }
+
         val btnPublicar = dialog.findViewById<Button>(R.id.btnPublicar)
 
         // Configurar la acción del botón de publicación
@@ -185,39 +192,35 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             val titulo = editTextTitulo.text.toString()
             val descripcion = editTextDescripcion.text.toString()
             val ubicacion = editTextUbicacion.text.toString()
-            val fecha = btnFecha.text.toString()
-            val hora = btnHora.text.toString()
-            val categoria = btnCategoria.text.toString()
-
-            // Realiza la lógica de publicación con los datos ingresados
-            // Por ejemplo, puedes guardar estos datos en Firebase Firestore
+            val fecha = selectedDate
+            val hora = selectedTime
+            val categoria = categoriaSeleccionada
             val userId = FirebaseAuth.getInstance().currentUser?.uid
             if (userId != null) {
-                val db = FirebaseFirestore.getInstance()
-                val publicacion = hashMapOf(
-                    "titulo" to titulo,
-                    "descripcion" to descripcion,
-                    "ubicacion" to ubicacion,
-                    "fecha" to fecha,
-                    "hora" to hora,
-                    "categoria" to categoria,
-                    "userId" to userId
-                )
+                val database = FirebaseDatabase.getInstance()
+                val reference = database.getReference("publicaciones")
 
-                db.collection("publicaciones")
-                    .add(publicacion)
-                    .addOnSuccessListener {
-                        // Publicación exitosa, cierra el diálogo
+                val publicacion = Publicacion(
+                    titulo,
+                    descripcion,
+                    ubicacion,
+                    fecha,
+                    hora,
+                    categoria,
+                    userId
+                )
+                // Guarda la publicación en la base de datos con la ID del usuario como clave
+                reference.child(userId).push().setValue(publicacion).addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
                         dialog.dismiss()
                         // Puedes mostrar un mensaje de éxito o realizar otras acciones
+                    } else {
+                        Toast.makeText(this, "Error al publicar: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                     }
-                    .addOnFailureListener {
-                        // Manejar el error, si es necesario
-                    }
+                }
             }
         }
 
-        // Mostrar el diálogo
         dialog.show()
     }
 
@@ -227,6 +230,8 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     }
     private fun mostrarMenuCategorias() {
     }
+
+
 
 
 

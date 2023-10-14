@@ -119,6 +119,12 @@ class CrearCuenta : AppCompatActivity() {
         b_CrearCuenta.setOnClickListener {
             val nombre = et_Nombre.text.toString().trim()
             val rut = et_Rut.text.toString().trim()
+            val userId = auth.currentUser?.uid
+            if (userId != null) {
+                val database: FirebaseDatabase = FirebaseDatabase.getInstance()
+                val databaseReference: DatabaseReference = database.reference.child("usuarios").child(userId)
+                databaseReference.child("rut").setValue(rut)
+            }
             val correo = et_Correo.text.toString().trim()
             val contraseña = et_Contraseña.text.toString().trim()
 
