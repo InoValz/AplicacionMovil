@@ -23,7 +23,8 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="661dp"
-        android:layout_gravity="bottom">
+        android:layout_gravity="bottom"
+        >
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar_herramientas"
@@ -41,19 +42,15 @@
             android:src="@drawable/comment"
             android:layout_gravity="center"
             android:background="?attr/selectableItemBackground"
-            android:contentDescription="Botón de herramientas" />
+            android:contentDescription="Botón de herramientas"
+            />
         </androidx.appcompat.widget.Toolbar>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_below="@id/toolbar_menuprincipal"
-            android:layout_marginStart="60dp"
-            android:layout_marginTop="20dp"
-
-            android:layout_marginEnd="60dp"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+             />
     </com.google.android.material.appbar.AppBarLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
