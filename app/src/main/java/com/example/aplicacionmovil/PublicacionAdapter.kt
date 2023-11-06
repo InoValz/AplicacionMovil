@@ -41,6 +41,11 @@ class PublicacionAdapter(private val publicacionesList: List<Publicacion>) :
     override fun getItemCount(): Int {
         return publicacionesList.size
     }
+    fun addPublicaciones(publicaciones: List<Publicacion>) {
+        addPublicaciones(publicaciones)
+    }
+
+
 }
 
 

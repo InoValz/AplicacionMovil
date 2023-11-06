@@ -10,8 +10,11 @@ import android.content.Intent
 import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.Gravity
 import android.view.MenuItem
+import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
@@ -45,6 +48,9 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     private val publicacionesList = mutableListOf<Publicacion>()
     private lateinit var publicacionAdapter: PublicacionAdapter
 
+    private val numPublicationsPerPage = 4  // Número de publicaciones por página
+    private var startIndex = 0  // Índice inicial para cargar publicaciones
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseFirestore.getInstance()
@@ -60,11 +66,59 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
         cargarPublicaciones()
 
+        val btnLoadMore = findViewById<Button>(R.id.btnLoadMore)
+        val adapter = PublicacionAdapter(publicacionesList.subList(0, startIndex))
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = adapter
+
+        // Configurar el botón "Cargar Más"
+        btnLoadMore.setOnClickListener {
+            // Cargar las siguientes 4 publicaciones
+            startIndex += numPublicationsPerPage
+            val endIndex = startIndex + numPublicationsPerPage
+            if (endIndex <= publicacionesList.size) {
+                val nextPublications = publicacionesList.subList(startIndex, endIndex)
+                adapter.addPublicaciones(nextPublications)
+            } else {
+                // Si no hay más publicaciones para cargar, oculta el botón "Cargar Más"
+                btnLoadMore.visibility = View.GONE
+            }
+        }
+
+        // Inicialmente, oculta el botón "Cargar Más" si no hay más publicaciones
+        if (publicacionesList.size <= numPublicationsPerPage) {
+            btnLoadMore.visibility = View.GONE
+        }
+
 
         btnToolbar = findViewById(R.id.btn_toolbar)
         btnToolbar.setOnClickListener {
             mostrarDialogoPublicacion()
         }
+
+        val edtBuscar = findViewById<EditText>(R.id.edtBuscar)
+
+        edtBuscar.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                // Filtrar publicaciones según el texto de búsqueda
+                val textoBusqueda = s.toString().toLowerCase()
+                val publicacionesFiltradas = publicacionesList.filter { publicacion ->
+                            publicacion.titulo.toLowerCase().contains(textoBusqueda) ||
+                            publicacion.ubicacion.toLowerCase().contains(textoBusqueda) ||
+                            publicacion.categoria.toLowerCase().contains(textoBusqueda) ||
+                            publicacion.fecha.toLowerCase().contains(textoBusqueda)
+                }
+
+                mostrarPublicacionesEnUI(publicacionesFiltradas)
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+            }
+        })
+
 
         val toolbar: androidx.appcompat.widget.Toolbar = findViewById(R.id.toolbar_menuprincipal)
         setSupportActionBar(toolbar)

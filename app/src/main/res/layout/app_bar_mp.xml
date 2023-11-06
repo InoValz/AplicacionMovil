@@ -20,37 +20,74 @@
             app:layout_scrollFlags="scroll|enterAlways" />
     </com.google.android.material.appbar.AppBarLayout>
 
-    <com.google.android.material.appbar.AppBarLayout
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="661dp"
-        android:layout_gravity="bottom"
-        >
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar_herramientas"
-            android:layout_width="match_parent"
-            android:layout_height="35dp"
-            android:layout_marginStart="100dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginEnd="100dp"
-            android:background="#3A9BB8"
-            app:layout_scrollFlags="scroll|enterAlways">
-        <ImageButton
-            android:id="@+id/btn_toolbar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/comment"
-            android:layout_gravity="center"
-            android:background="?attr/selectableItemBackground"
-            android:contentDescription="Botón de herramientas"
-            />
-        </androidx.appcompat.widget.Toolbar>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerView"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-             />
-    </com.google.android.material.appbar.AppBarLayout>
+            android:orientation="vertical">
 
+            <com.google.android.material.appbar.AppBarLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="10dp"
+                android:layout_marginBottom="10dp"
+                android:layout_gravity="bottom"
+                android:background="#3A9BB8"
+                app:layout_scrollFlags="scroll|enterAlways">
+
+                <androidx.appcompat.widget.Toolbar
+                    android:id="@+id/toolbar_herramientas"
+                    android:layout_width="match_parent"
+                    android:layout_height="35dp"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginEnd="10dp"
+                    android:layout_marginBottom="10dp"
+                    android:background="#3A9BB8"
+                    app:layout_scrollFlags="scroll|enterAlways">
+
+                    <EditText
+                        android:id="@+id/edtBuscar"
+                        android:layout_width="250dp"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="5dp"
+                        android:background="@android:color/transparent"
+                        android:drawableLeft="@android:drawable/ic_menu_search"
+                        android:hint="Filtrar"
+                        android:inputType="text"
+                        app:layout_scrollFlags="scroll|enterAlways" />
+
+                    <ImageButton
+                        android:id="@+id/btn_toolbar"
+                        android:layout_width="100dp"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="5dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:contentDescription="Botón de herramientas"
+                        android:src="@drawable/comment" />
+
+                </androidx.appcompat.widget.Toolbar>
+            </com.google.android.material.appbar.AppBarLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <Button
+                android:id="@+id/btnLoadMore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cargar Más"
+                android:layout_gravity="center_horizontal"
+                />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
