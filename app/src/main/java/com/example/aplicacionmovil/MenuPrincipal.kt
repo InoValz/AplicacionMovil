@@ -33,7 +33,10 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Calendar
-
+import java.util.Collections.max
+import java.util.Collections.min
+import kotlin.math.max
+import kotlin.math.min
 
 
 class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener{
@@ -48,8 +51,9 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     private val publicacionesList = mutableListOf<Publicacion>()
     private lateinit var publicacionAdapter: PublicacionAdapter
 
-    private val numPublicationsPerPage = 4  // Número de publicaciones por página
     private var startIndex = 0  // Índice inicial para cargar publicaciones
+    private var endIndex = 4  // Índice final para mostrar publicaciones
+    private val numPublicationsPerPage = 5  // Número de publicaciones por página
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,33 +67,17 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         recyclerView.adapter = publicacionAdapter
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-
         cargarPublicaciones()
 
         val btnLoadMore = findViewById<Button>(R.id.btnLoadMore)
-        val adapter = PublicacionAdapter(publicacionesList.subList(0, startIndex))
+        val btnVolver = findViewById<Button>(R.id.btnVolver)
+        val maxIndex = publicacionesList.size - 1
+        this.startIndex = max(0, min(startIndex, maxIndex))
+        this.endIndex = min(maxIndex, startIndex + numPublicationsPerPage - 1)
+
+        val adapter = PublicacionAdapter(publicacionesList.subList(startIndex, endIndex + 1))
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
-
-        // Configurar el botón "Cargar Más"
-        btnLoadMore.setOnClickListener {
-            // Cargar las siguientes 4 publicaciones
-            startIndex += numPublicationsPerPage
-            val endIndex = startIndex + numPublicationsPerPage
-            if (endIndex <= publicacionesList.size) {
-                val nextPublications = publicacionesList.subList(startIndex, endIndex)
-                adapter.addPublicaciones(nextPublications)
-            } else {
-                // Si no hay más publicaciones para cargar, oculta el botón "Cargar Más"
-                btnLoadMore.visibility = View.GONE
-            }
-        }
-
-        // Inicialmente, oculta el botón "Cargar Más" si no hay más publicaciones
-        if (publicacionesList.size <= numPublicationsPerPage) {
-            btnLoadMore.visibility = View.GONE
-        }
-
 
         btnToolbar = findViewById(R.id.btn_toolbar)
         btnToolbar.setOnClickListener {
@@ -133,6 +121,39 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
         val navigationView: NavigationView = findViewById(R.id.nav_view)
         navigationView.setNavigationItemSelectedListener(this)
+
+
+        btnLoadMore.setOnClickListener {
+            startIndex = endIndex + 1 // Mueve el índice de inicio al siguiente elemento después del último mostrado
+            endIndex = startIndex + numPublicationsPerPage - 1 // Calcula el nuevo índice final
+            endIndex = min(endIndex, publicacionesList.size - 1) // Asegúrate de que endIndex no exceda el tamaño de la lista
+            val nextPublications = publicacionesList.subList(startIndex, endIndex + 1)
+            adapter.refreshPublicaciones(nextPublications)
+            btnVolver.visibility = View.VISIBLE // Mostrar el botón "Volver"
+
+            // Comprobar si hemos llegado al final de la lista
+            if (endIndex == publicacionesList.size - 1) {
+                btnLoadMore.visibility = View.GONE
+            }
+        }
+
+        btnVolver.setOnClickListener {
+            endIndex = startIndex - 1 // Mueve el índice final al elemento anterior al primero mostrado
+            startIndex = endIndex - numPublicationsPerPage + 1 // Calcula el nuevo índice de inicio
+            startIndex = max(startIndex, 0) // Asegúrate de que startIndex no sea menor que 0
+            val previousPublications = publicacionesList.subList(startIndex, endIndex + 1)
+            adapter.refreshPublicaciones(previousPublications)
+            btnLoadMore.visibility = View.VISIBLE // Mostrar el botón "Cargar Más"
+
+            // Comprobar si hemos vuelto al principio de la lista
+            if (startIndex == 0) {
+                btnVolver.visibility = View.GONE
+            }
+        }
+
+
+        // Oculta el botón "Volver" al principio, ya que no hay publicaciones anteriores
+        btnVolver.visibility = View.GONE
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
@@ -334,8 +355,5 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
     }
-
-
-
 
 }

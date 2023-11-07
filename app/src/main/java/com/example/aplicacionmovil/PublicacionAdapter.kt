@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.aplicacionmovil.Publicacion
 import com.example.aplicacionmovil.R
 
-class PublicacionAdapter(private val publicacionesList: List<Publicacion>) :
+class PublicacionAdapter(private var publicacionesList: List<Publicacion>) :
     RecyclerView.Adapter<PublicacionAdapter.PublicacionViewHolder>() {
 
     inner class PublicacionViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -41,11 +41,26 @@ class PublicacionAdapter(private val publicacionesList: List<Publicacion>) :
     override fun getItemCount(): Int {
         return publicacionesList.size
     }
-    fun addPublicaciones(publicaciones: List<Publicacion>) {
-        addPublicaciones(publicaciones)
+    fun refreshPublicaciones(nuevasPublicaciones: List<Publicacion>) {
+        publicacionesList.clear()
+        publicacionesList.addAll(nuevasPublicaciones)
+        notifyDataSetChanged()
     }
 
+    fun addPublicaciones(nuevasPublicaciones: List<Publicacion>) {
+        publicacionesList.clear()  // Limpia la lista actual
+        publicacionesList.addAll(nuevasPublicaciones)  // Agrega las nuevas publicaciones
+        notifyDataSetChanged() // Notifica al adaptador que los datos han cambiado
+    }
 
+}
+
+private fun <E> List<E>.addAll(nuevasPublicaciones: List<E>) {
+
+}
+
+private fun <E> List<E>.clear() {
+    TODO("Not yet implemented")
 }
 
 
