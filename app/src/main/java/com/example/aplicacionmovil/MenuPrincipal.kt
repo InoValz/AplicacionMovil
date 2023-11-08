@@ -30,16 +30,12 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Calendar
-import java.util.Collections.max
-import java.util.Collections.min
-import kotlin.math.max
-import kotlin.math.min
 
-
-class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener{
+class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     private lateinit var drawer: DrawerLayout
     private lateinit var toggle: ActionBarDrawerToggle
@@ -51,31 +47,30 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     private val publicacionesList = mutableListOf<Publicacion>()
     private lateinit var publicacionAdapter: PublicacionAdapter
 
-    private var startIndex = 0  // Índice inicial para cargar publicaciones
-    private var endIndex = 4  // Índice final para mostrar publicaciones
-    private val numPublicationsPerPage = 5  // Número de publicaciones por página
-
+    private var totalPublicacionesDisponibles = 0
+    private val CANTIDAD_PUBLICACIONES_POR_CARGA = 5 // Aquí define la cantidad deseada
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val database = FirebaseDatabase.getInstance()
+        val reference: DatabaseReference = database.getReference("publicaciones")
+
         FirebaseFirestore.getInstance()
         setContentView(R.layout.activity_menu_principal)
 
-        val database = FirebaseDatabase.getInstance()
-
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+
+        val btnLoadMore = findViewById<Button>(R.id.btnLoadMore)
+        btnLoadMore.setOnClickListener {
+            onCargarMasClick()
+        }
+
         publicacionAdapter = PublicacionAdapter(publicacionesList)
         recyclerView.adapter = publicacionAdapter
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         cargarPublicaciones()
 
-        val btnLoadMore = findViewById<Button>(R.id.btnLoadMore)
-        val btnVolver = findViewById<Button>(R.id.btnVolver)
-        val maxIndex = publicacionesList.size - 1
-        this.startIndex = max(0, min(startIndex, maxIndex))
-        this.endIndex = min(maxIndex, startIndex + numPublicationsPerPage - 1)
-
-        val adapter = PublicacionAdapter(publicacionesList.subList(startIndex, endIndex + 1))
+        val adapter = PublicacionAdapter(publicacionesList)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
 
@@ -94,7 +89,7 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 // Filtrar publicaciones según el texto de búsqueda
                 val textoBusqueda = s.toString().toLowerCase()
                 val publicacionesFiltradas = publicacionesList.filter { publicacion ->
-                            publicacion.titulo.toLowerCase().contains(textoBusqueda) ||
+                    publicacion.titulo.toLowerCase().contains(textoBusqueda) ||
                             publicacion.ubicacion.toLowerCase().contains(textoBusqueda) ||
                             publicacion.categoria.toLowerCase().contains(textoBusqueda) ||
                             publicacion.fecha.toLowerCase().contains(textoBusqueda)
@@ -106,7 +101,6 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             override fun afterTextChanged(s: Editable?) {
             }
         })
-
 
         val toolbar: androidx.appcompat.widget.Toolbar = findViewById(R.id.toolbar_menuprincipal)
         setSupportActionBar(toolbar)
@@ -122,38 +116,30 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         val navigationView: NavigationView = findViewById(R.id.nav_view)
         navigationView.setNavigationItemSelectedListener(this)
 
+        // Agrega un oyente de valores para la referencia
+        reference.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                // Se llama cuando los datos cambian en la base de datos
+                val nuevasPublicaciones = mutableListOf<Publicacion>()
 
-        btnLoadMore.setOnClickListener {
-            startIndex = endIndex + 1 // Mueve el índice de inicio al siguiente elemento después del último mostrado
-            endIndex = startIndex + numPublicationsPerPage - 1 // Calcula el nuevo índice final
-            endIndex = min(endIndex, publicacionesList.size - 1) // Asegúrate de que endIndex no exceda el tamaño de la lista
-            val nextPublications = publicacionesList.subList(startIndex, endIndex + 1)
-            adapter.refreshPublicaciones(nextPublications)
-            btnVolver.visibility = View.VISIBLE // Mostrar el botón "Volver"
+                for (snapshot in dataSnapshot.children) {
+                    val publicacion = snapshot.getValue(Publicacion::class.java)
+                    if (publicacion != null) {
+                        nuevasPublicaciones.add(publicacion)
+                    }
+                }
 
-            // Comprobar si hemos llegado al final de la lista
-            if (endIndex == publicacionesList.size - 1) {
-                btnLoadMore.visibility = View.GONE
+                publicacionesList.clear()
+                publicacionesList.addAll(nuevasPublicaciones)
+
+                // Actualiza la IU con las nuevas publicaciones
             }
-        }
 
-        btnVolver.setOnClickListener {
-            endIndex = startIndex - 1 // Mueve el índice final al elemento anterior al primero mostrado
-            startIndex = endIndex - numPublicationsPerPage + 1 // Calcula el nuevo índice de inicio
-            startIndex = max(startIndex, 0) // Asegúrate de que startIndex no sea menor que 0
-            val previousPublications = publicacionesList.subList(startIndex, endIndex + 1)
-            adapter.refreshPublicaciones(previousPublications)
-            btnLoadMore.visibility = View.VISIBLE // Mostrar el botón "Cargar Más"
-
-            // Comprobar si hemos vuelto al principio de la lista
-            if (startIndex == 0) {
-                btnVolver.visibility = View.GONE
+            override fun onCancelled(databaseError: DatabaseError) {
+                Toast.makeText(this@MenuPrincipal, "Error al cargar las publicaciones", Toast.LENGTH_SHORT).show()
             }
-        }
+        })
 
-
-        // Oculta el botón "Volver" al principio, ya que no hay publicaciones anteriores
-        btnVolver.visibility = View.GONE
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
@@ -175,10 +161,10 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 Toast.makeText(this, "Mis Sectores", Toast.LENGTH_SHORT).show()
             }
             R.id.nav_cerrar_sesion -> {
-                signOut() // Llama a la función para cerrar sesión
+                signOut()
                 val intent = Intent(this, MainActivity::class.java)
                 startActivity(intent)
-                finish() // Cierra la actividad actual para evitar que el usuario regrese presionando "Atrás"
+                finish()
             }
         }
 
@@ -206,17 +192,14 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
     private fun signOut() {
         FirebaseAuth.getInstance().signOut()
-        // Borra el ID del usuario de las preferencias compartidas
         val sharedPreferences = getSharedPreferences("Preferencias", Context.MODE_PRIVATE)
         sharedPreferences.edit().remove("UserId").apply()
     }
 
     private fun mostrarDialogoPublicacion() {
-        // Crear un diálogo personalizado
         val dialog = Dialog(this)
         dialog.setContentView(R.layout.dialog_publicacion)
 
-        // Configuraciones adicionales para centrar el diálogo
         val layoutParams = WindowManager.LayoutParams()
         layoutParams.copyFrom(dialog.window?.attributes)
         layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT
@@ -225,62 +208,57 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
         dialog.window?.attributes = layoutParams
 
-        // Obtener referencias a elementos en el diálogo
         val editTextTitulo = dialog.findViewById<EditText>(R.id.editTextTitulo)
         val editTextDescripcion = dialog.findViewById<EditText>(R.id.editTextDescripcion)
         val editTextUbicacion = dialog.findViewById<EditText>(R.id.editTextUbicacion)
 
         val btnFecha = dialog.findViewById<Button>(R.id.btnFecha)
-            btnFecha.setOnClickListener {
-                mostrarDatePickerDialog()
-                val calendar = Calendar.getInstance()
-                val year = calendar.get(Calendar.YEAR)
-                val month = calendar.get(Calendar.MONTH)
-                val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
+        btnFecha.setOnClickListener {
+            mostrarDatePickerDialog()
+            val calendar = Calendar.getInstance()
+            val year = calendar.get(Calendar.YEAR)
+            val month = calendar.get(Calendar.MONTH)
+            val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
 
-                val datePickerDialog = DatePickerDialog(this, { _, year, month, dayOfMonth ->
-                    // Formatea la fecha seleccionada como desees, aquí se usa el formato dd/MM/yyyy
-                    selectedDate = String.format("%02d/%02d/%04d", dayOfMonth, month + 1, year)
-                    // Muestra la fecha en el botón o en otro lugar si lo prefieres
-                    btnFecha.text = selectedDate
-                }, year, month, dayOfMonth)
-                datePickerDialog.show()
-            }
+            val datePickerDialog = DatePickerDialog(this, { _, year, month, dayOfMonth ->
+                selectedDate = String.format("%02d/%02d/%04d", dayOfMonth, month + 1, year)
+                btnFecha.text = selectedDate
+            }, year, month, dayOfMonth)
+            datePickerDialog.show()
+        }
+
         val btnHora = dialog.findViewById<Button>(R.id.btnHora)
-            btnHora.setOnClickListener {
-                mostrarTimePickerDialog()
-                val calendar = Calendar.getInstance()
-                val hourOfDay = calendar.get(Calendar.HOUR_OF_DAY)
-                val minute = calendar.get(Calendar.MINUTE)
+        btnHora.setOnClickListener {
+            mostrarTimePickerDialog()
+            val calendar = Calendar.getInstance()
+            val hourOfDay = calendar.get(Calendar.HOUR_OF_DAY)
+            val minute = calendar.get(Calendar.MINUTE)
 
-                val timePickerDialog = TimePickerDialog(this, TimePickerDialog.OnTimeSetListener { _, hourOfDay, minute ->
-                    // Formatea la hora seleccionada como desees, aquí se usa el formato HH:mm
-                    selectedTime = String.format("%02d:%02d", hourOfDay, minute)
-                    // Muestra la hora en el botón o en otro lugar si lo prefieres
-                    btnHora.text = selectedTime
-                }, hourOfDay, minute, true)
-                timePickerDialog.show()
-            }
+            val timePickerDialog = TimePickerDialog(this, TimePickerDialog.OnTimeSetListener { _, hourOfDay, minute ->
+                selectedTime = String.format("%02d:%02d", hourOfDay, minute)
+                btnHora.text = selectedTime
+            }, hourOfDay, minute, true)
+            timePickerDialog.show()
+        }
+
         val btnCategoria = dialog.findViewById<Button>(R.id.btnCategoria)
         var categoriaSeleccionada: String = ""
-            btnCategoria.setOnClickListener{
-                mostrarMenuCategorias()
-                val categorias = arrayOf("Categoría 1", "Categoría 2", "Categoría 3", "Categoría 4") // Define tus categorías aquí
+        btnCategoria.setOnClickListener{
+            mostrarMenuCategorias()
+            val categorias = arrayOf("Categoría 1", "Categoría 2", "Categoría 3", "Categoría 4")
 
-                val builder = AlertDialog.Builder(this)
-                builder.setTitle("Selecciona una categoría")
-                    .setItems(categorias) { _, which ->
-                        categoriaSeleccionada = categorias[which]
-                        btnCategoria.text = categoriaSeleccionada
-                    }
-                builder.create().show()
-            }
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle("Selecciona una categoría")
+                .setItems(categorias) { _, which ->
+                    categoriaSeleccionada = categorias[which]
+                    btnCategoria.text = categoriaSeleccionada
+                }
+            builder.create().show()
+        }
 
         val btnPublicar = dialog.findViewById<Button>(R.id.btnPublicar)
 
-        // Configurar la acción del botón de publicación
         btnPublicar.setOnClickListener {
-            // Aquí puedes obtener los valores de los campos
             val titulo = editTextTitulo.text.toString()
             val descripcion = editTextDescripcion.text.toString()
             val ubicacion = editTextUbicacion.text.toString()
@@ -301,11 +279,9 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                     categoria,
                     userId
                 )
-                // Guarda la publicación en la base de datos con la ID del usuario como clave
                 reference.child(userId).push().setValue(publicacion).addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         dialog.dismiss()
-                        // Puedes mostrar un mensaje de éxito o realizar otras acciones
                         Toast.makeText(this, "Publicación exitosa", Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(this, "Error al publicar: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
@@ -313,41 +289,97 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 }
             }
         }
-
         dialog.show()
     }
 
     private fun mostrarDatePickerDialog() {
+        // Implementa el DatePickerDialog aquí
     }
+
     private fun mostrarTimePickerDialog() {
+        // Implementa el TimePickerDialog aquí
     }
+
     private fun mostrarMenuCategorias() {
+        // Implementa la lógica para mostrar el menú de categorías aquí
     }
 
     private fun cargarPublicaciones() {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         if (userId != null) {
             val reference = FirebaseDatabase.getInstance().getReference("publicaciones").child(userId)
-            reference.addValueEventListener(object : ValueEventListener {
+
+            // Obtener el número total de publicaciones disponibles
+            reference.addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
-                    publicacionesList.clear()
-                    for (snapshot in dataSnapshot.children) {
-                        val publicacion = snapshot.getValue(Publicacion::class.java)
-                        if (publicacion != null) {
-                            publicacionesList.add(publicacion)
+                    totalPublicacionesDisponibles = dataSnapshot.childrenCount.toInt()
+                    // Limitar la cantidad de publicaciones a cargar inicialmente
+                    val cantidadInicial = minOf(totalPublicacionesDisponibles, 5)
+
+                    // Consultar las últimas "cantidadInicial" publicaciones
+                    reference.limitToLast(cantidadInicial).addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(dataSnapshot: DataSnapshot) {
+                            val nuevasPublicaciones = mutableListOf<Publicacion>()
+
+                            for (snapshot in dataSnapshot.children) {
+                                val publicacion = snapshot.getValue(Publicacion::class.java)
+                                if (publicacion != null) {
+                                    nuevasPublicaciones.add(publicacion)
+                                }
+                            }
+
+                            publicacionesList.clear()
+                            publicacionesList.addAll(nuevasPublicaciones)
+
+                            mostrarPublicacionesEnUI(publicacionesList)
                         }
-                    }
-                    // Luego de obtener las publicaciones, puedes mostrarlas en la interfaz de usuario
-                    mostrarPublicacionesEnUI(publicacionesList)
+
+                        override fun onCancelled(databaseError: DatabaseError) {
+                            Toast.makeText(this@MenuPrincipal, "Error al cargar las publicaciones", Toast.LENGTH_SHORT).show()
+                        }
+                    })
                 }
 
                 override fun onCancelled(databaseError: DatabaseError) {
-                    // Manejar el error, si es necesario
-                    Toast.makeText(this@MenuPrincipal, "Error al cargar las publicaciones", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MenuPrincipal, "Error al obtener el número total de publicaciones", Toast.LENGTH_SHORT).show()
                 }
             })
         }
     }
+
+    private fun onCargarMasClick() {
+        if (publicacionesList.size < totalPublicacionesDisponibles) {
+            val cantidadPorCargar = minOf(CANTIDAD_PUBLICACIONES_POR_CARGA, totalPublicacionesDisponibles - publicacionesList.size)
+            val userId = FirebaseAuth.getInstance().currentUser?.uid
+            if (userId != null) {
+                val reference = FirebaseDatabase.getInstance().getReference("publicaciones").child(userId)
+                reference.limitToLast(publicacionesList.size + cantidadPorCargar).addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                        val nuevasPublicaciones = mutableListOf<Publicacion>()
+
+                        for (snapshot in dataSnapshot.children) {
+                            val publicacion = snapshot.getValue(Publicacion::class.java)
+                            if (publicacion != null) {
+                                nuevasPublicaciones.add(publicacion)
+                            }
+                        }
+
+                        publicacionesList.clear()
+                        publicacionesList.addAll(nuevasPublicaciones)
+
+                        mostrarPublicacionesEnUI(publicacionesList)
+                    }
+
+                    override fun onCancelled(databaseError: DatabaseError) {
+                        Toast.makeText(this@MenuPrincipal, "Error al cargar más publicaciones", Toast.LENGTH_SHORT).show()
+                    }
+                })
+            }
+        } else {
+            Toast.makeText(this, "No hay más publicaciones para cargar", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     private fun mostrarPublicacionesEnUI(publicaciones: List<Publicacion>) {
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
@@ -355,5 +387,4 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
     }
-
 }

@@ -41,26 +41,7 @@ class PublicacionAdapter(private var publicacionesList: List<Publicacion>) :
     override fun getItemCount(): Int {
         return publicacionesList.size
     }
-    fun refreshPublicaciones(nuevasPublicaciones: List<Publicacion>) {
-        publicacionesList.clear()
-        publicacionesList.addAll(nuevasPublicaciones)
-        notifyDataSetChanged()
-    }
-
-    fun addPublicaciones(nuevasPublicaciones: List<Publicacion>) {
-        publicacionesList.clear()  // Limpia la lista actual
-        publicacionesList.addAll(nuevasPublicaciones)  // Agrega las nuevas publicaciones
-        notifyDataSetChanged() // Notifica al adaptador que los datos han cambiado
-    }
-
 }
 
-private fun <E> List<E>.addAll(nuevasPublicaciones: List<E>) {
-
-}
-
-private fun <E> List<E>.clear() {
-    TODO("Not yet implemented")
-}
 
 
