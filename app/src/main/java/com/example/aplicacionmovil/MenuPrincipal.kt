@@ -313,31 +313,36 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             reference.addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     totalPublicacionesDisponibles = dataSnapshot.childrenCount.toInt()
-                    // Limitar la cantidad de publicaciones a cargar inicialmente
-                    val cantidadInicial = minOf(totalPublicacionesDisponibles, 5)
 
-                    // Consultar las últimas "cantidadInicial" publicaciones
-                    reference.limitToLast(cantidadInicial).addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(dataSnapshot: DataSnapshot) {
-                            val nuevasPublicaciones = mutableListOf<Publicacion>()
+                    // Verificar si hay publicaciones disponibles
+                    if (totalPublicacionesDisponibles > 0) {
+                        // Limitar la cantidad de publicaciones a cargar inicialmente
+                        val cantidadInicial = minOf(totalPublicacionesDisponibles, 5)
 
-                            for (snapshot in dataSnapshot.children) {
-                                val publicacion = snapshot.getValue(Publicacion::class.java)
-                                if (publicacion != null) {
-                                    nuevasPublicaciones.add(publicacion)
+                        reference.limitToLast(cantidadInicial).addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                                val nuevasPublicaciones = mutableListOf<Publicacion>()
+
+                                for (snapshot in dataSnapshot.children) {
+                                    val publicacion = snapshot.getValue(Publicacion::class.java)
+                                    if (publicacion != null) {
+                                        nuevasPublicaciones.add(publicacion)
+                                    }
                                 }
+
+                                publicacionesList.clear()
+                                publicacionesList.addAll(nuevasPublicaciones)
+
+                                mostrarPublicacionesEnUI(publicacionesList)
                             }
 
-                            publicacionesList.clear()
-                            publicacionesList.addAll(nuevasPublicaciones)
-
-                            mostrarPublicacionesEnUI(publicacionesList)
-                        }
-
-                        override fun onCancelled(databaseError: DatabaseError) {
-                            Toast.makeText(this@MenuPrincipal, "Error al cargar las publicaciones", Toast.LENGTH_SHORT).show()
-                        }
-                    })
+                            override fun onCancelled(databaseError: DatabaseError) {
+                                Toast.makeText(this@MenuPrincipal, "Error al cargar las publicaciones", Toast.LENGTH_SHORT).show()
+                            }
+                        })
+                    } else {
+                        // No hay publicaciones disponibles, puedes mostrar un mensaje o tomar medidas adicionales si es necesario
+                    }
                 }
 
                 override fun onCancelled(databaseError: DatabaseError) {
@@ -349,38 +354,38 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
     private fun onCargarMasClick() {
         if (publicacionesList.size < totalPublicacionesDisponibles) {
-            val cantidadPorCargar = minOf(CANTIDAD_PUBLICACIONES_POR_CARGA, totalPublicacionesDisponibles - publicacionesList.size)
-            val userId = FirebaseAuth.getInstance().currentUser?.uid
-            if (userId != null) {
-                val reference = FirebaseDatabase.getInstance().getReference("publicaciones").child(userId)
-                reference.limitToLast(publicacionesList.size + cantidadPorCargar).addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(dataSnapshot: DataSnapshot) {
-                        val nuevasPublicaciones = mutableListOf<Publicacion>()
+            val cantidadPorCargar = maxOf(0, minOf(CANTIDAD_PUBLICACIONES_POR_CARGA, totalPublicacionesDisponibles - publicacionesList.size))
+            if (cantidadPorCargar > 0) {
+                val userId = FirebaseAuth.getInstance().currentUser?.uid
+                if (userId != null) {
+                    val reference = FirebaseDatabase.getInstance().getReference("publicaciones").child(userId)
+                    reference.limitToLast(cantidadPorCargar).addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(dataSnapshot: DataSnapshot) {
+                            val nuevasPublicaciones = mutableListOf<Publicacion>()
 
-                        for (snapshot in dataSnapshot.children) {
-                            val publicacion = snapshot.getValue(Publicacion::class.java)
-                            if (publicacion != null) {
-                                nuevasPublicaciones.add(publicacion)
+                            for (snapshot in dataSnapshot.children) {
+                                val publicacion = snapshot.getValue(Publicacion::class.java)
+                                if (publicacion != null) {
+                                    nuevasPublicaciones.add(publicacion)
+                                }
                             }
+
+                            // Agrega las nuevas publicaciones a la lista existente
+                            publicacionesList.addAll(nuevasPublicaciones)
+
+                            mostrarPublicacionesEnUI(publicacionesList)
                         }
 
-                        publicacionesList.clear()
-                        publicacionesList.addAll(nuevasPublicaciones)
-
-                        mostrarPublicacionesEnUI(publicacionesList)
-                    }
-
-                    override fun onCancelled(databaseError: DatabaseError) {
-                        Toast.makeText(this@MenuPrincipal, "Error al cargar más publicaciones", Toast.LENGTH_SHORT).show()
-                    }
-                })
+                        override fun onCancelled(databaseError: DatabaseError) {
+                            Toast.makeText(this@MenuPrincipal, "Error al cargar más publicaciones", Toast.LENGTH_SHORT).show()
+                        }
+                    })
+                }
+            } else {
+                Toast.makeText(this, "No hay más publicaciones para cargar", Toast.LENGTH_SHORT).show()
             }
-        } else {
-            Toast.makeText(this, "No hay más publicaciones para cargar", Toast.LENGTH_SHORT).show()
         }
     }
-
-
     private fun mostrarPublicacionesEnUI(publicaciones: List<Publicacion>) {
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
         val adapter = PublicacionAdapter(publicaciones)
