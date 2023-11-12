@@ -8,7 +8,6 @@ import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -21,18 +20,14 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.ValueEventListener
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.database.*
 import java.util.Calendar
 
 class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -48,18 +43,19 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     private lateinit var publicacionAdapter: PublicacionAdapter
 
     private var totalPublicacionesDisponibles = 0
-    private val CANTIDAD_PUBLICACIONES_POR_CARGA = 5 // Aquí define la cantidad deseada
+    private var lastLoadedPublicationsCount = 0
+    private val CANTIDAD_PUBLICACIONES_POR_CARGA = 5
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        setContentView(R.layout.activity_menu_principal)
         val database = FirebaseDatabase.getInstance()
         val reference: DatabaseReference = database.getReference("publicaciones")
 
-        FirebaseFirestore.getInstance()
-        setContentView(R.layout.activity_menu_principal)
-
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
-
         val btnLoadMore = findViewById<Button>(R.id.btnLoadMore)
+
         btnLoadMore.setOnClickListener {
             onCargarMasClick()
         }
@@ -69,10 +65,6 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         cargarPublicaciones()
-
-        val adapter = PublicacionAdapter(publicacionesList)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = adapter
 
         btnToolbar = findViewById(R.id.btn_toolbar)
         btnToolbar.setOnClickListener {
@@ -86,7 +78,6 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                // Filtrar publicaciones según el texto de búsqueda
                 val textoBusqueda = s.toString().toLowerCase()
                 val publicacionesFiltradas = publicacionesList.filter { publicacion ->
                     publicacion.titulo.toLowerCase().contains(textoBusqueda) ||
@@ -106,7 +97,6 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         setSupportActionBar(toolbar)
 
         drawer = findViewById(R.id.drawer_Layout)
-
         toggle = ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
         drawer.addDrawerListener(toggle)
 
@@ -116,10 +106,8 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         val navigationView: NavigationView = findViewById(R.id.nav_view)
         navigationView.setNavigationItemSelectedListener(this)
 
-        // Agrega un oyente de valores para la referencia
         reference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
-                // Se llama cuando los datos cambian en la base de datos
                 val nuevasPublicaciones = mutableListOf<Publicacion>()
 
                 for (snapshot in dataSnapshot.children) {
@@ -131,19 +119,17 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
                 publicacionesList.clear()
                 publicacionesList.addAll(nuevasPublicaciones)
-
-                // Actualiza la IU con las nuevas publicaciones
+                mostrarPublicacionesEnUI(publicacionesList)
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
                 Toast.makeText(this@MenuPrincipal, "Error al cargar las publicaciones", Toast.LENGTH_SHORT).show()
             }
         })
-
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        when (item.itemId){
+        when (item.itemId) {
             R.id.nav_inicio -> {
                 Toast.makeText(this, "Inicio", Toast.LENGTH_SHORT).show()
                 val intent = Intent(this, MenuPrincipal::class.java)
@@ -243,7 +229,7 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
         val btnCategoria = dialog.findViewById<Button>(R.id.btnCategoria)
         var categoriaSeleccionada: String = ""
-        btnCategoria.setOnClickListener{
+        btnCategoria.setOnClickListener {
             mostrarMenuCategorias()
             val categorias = arrayOf("Categoría 1", "Categoría 2", "Categoría 3", "Categoría 4")
 
@@ -266,29 +252,37 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             val hora = selectedTime
             val categoria = categoriaSeleccionada
             val userId = FirebaseAuth.getInstance().currentUser?.uid
+
             if (userId != null) {
                 val database = FirebaseDatabase.getInstance()
                 val reference = database.getReference("publicaciones")
 
-                val publicacion = Publicacion(
-                    titulo,
-                    descripcion,
-                    ubicacion,
-                    fecha,
-                    hora,
-                    categoria,
-                    userId
-                )
-                reference.child(userId).push().setValue(publicacion).addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        dialog.dismiss()
-                        Toast.makeText(this, "Publicación exitosa", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(this, "Error al publicar: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                val postId = reference.push().key
+
+                if (postId != null) {
+                    val publicacion = Publicacion(
+                        postId, // Utiliza la clave generada como el ID
+                        titulo,
+                        descripcion,
+                        ubicacion,
+                        fecha,
+                        hora,
+                        categoria,
+                        userId
+                    )
+
+                    reference.child(postId).setValue(publicacion).addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            dialog.dismiss()
+                            Toast.makeText(this, "Publicación exitosa", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this, "Error al publicar: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             }
         }
+
         dialog.show()
     }
 
@@ -307,85 +301,64 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     private fun cargarPublicaciones() {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         if (userId != null) {
-            val reference = FirebaseDatabase.getInstance().getReference("publicaciones").child(userId)
-
-            // Obtener el número total de publicaciones disponibles
-            reference.addListenerForSingleValueEvent(object : ValueEventListener {
+            val reference = FirebaseDatabase.getInstance().getReference("publicaciones")
+            reference.limitToLast(CANTIDAD_PUBLICACIONES_POR_CARGA).addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     totalPublicacionesDisponibles = dataSnapshot.childrenCount.toInt()
+                    val nuevasPublicaciones = mutableListOf<Publicacion>()
 
-                    // Verificar si hay publicaciones disponibles
-                    if (totalPublicacionesDisponibles > 0) {
-                        // Limitar la cantidad de publicaciones a cargar inicialmente
-                        val cantidadInicial = minOf(totalPublicacionesDisponibles, 5)
-
-                        reference.limitToLast(cantidadInicial).addListenerForSingleValueEvent(object : ValueEventListener {
-                            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                                val nuevasPublicaciones = mutableListOf<Publicacion>()
-
-                                for (snapshot in dataSnapshot.children) {
-                                    val publicacion = snapshot.getValue(Publicacion::class.java)
-                                    if (publicacion != null) {
-                                        nuevasPublicaciones.add(publicacion)
-                                    }
-                                }
-
-                                publicacionesList.clear()
-                                publicacionesList.addAll(nuevasPublicaciones)
-
-                                mostrarPublicacionesEnUI(publicacionesList)
-                            }
-
-                            override fun onCancelled(databaseError: DatabaseError) {
-                                Toast.makeText(this@MenuPrincipal, "Error al cargar las publicaciones", Toast.LENGTH_SHORT).show()
-                            }
-                        })
-                    } else {
-                        // No hay publicaciones disponibles, puedes mostrar un mensaje o tomar medidas adicionales si es necesario
+                    for (snapshot in dataSnapshot.children) {
+                        val publicacion = snapshot.getValue(Publicacion::class.java)
+                        if (publicacion != null) {
+                            nuevasPublicaciones.add(publicacion)
+                        }
                     }
+
+                    lastLoadedPublicationsCount = nuevasPublicaciones.size
+                    publicacionesList.clear()
+                    publicacionesList.addAll(nuevasPublicaciones)
+                    mostrarPublicacionesEnUI(publicacionesList)
                 }
 
                 override fun onCancelled(databaseError: DatabaseError) {
-                    Toast.makeText(this@MenuPrincipal, "Error al obtener el número total de publicaciones", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MenuPrincipal, "Error al cargar las publicaciones", Toast.LENGTH_SHORT).show()
                 }
             })
         }
     }
 
     private fun onCargarMasClick() {
-        if (publicacionesList.size < totalPublicacionesDisponibles) {
-            val cantidadPorCargar = maxOf(0, minOf(CANTIDAD_PUBLICACIONES_POR_CARGA, totalPublicacionesDisponibles - publicacionesList.size))
-            if (cantidadPorCargar > 0) {
-                val userId = FirebaseAuth.getInstance().currentUser?.uid
-                if (userId != null) {
-                    val reference = FirebaseDatabase.getInstance().getReference("publicaciones").child(userId)
-                    reference.limitToLast(cantidadPorCargar).addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(dataSnapshot: DataSnapshot) {
-                            val nuevasPublicaciones = mutableListOf<Publicacion>()
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            val reference = FirebaseDatabase.getInstance().getReference("publicaciones")
 
-                            for (snapshot in dataSnapshot.children) {
-                                val publicacion = snapshot.getValue(Publicacion::class.java)
-                                if (publicacion != null) {
-                                    nuevasPublicaciones.add(publicacion)
-                                }
+            // Utilizamos el último límite cargado como punto de referencia
+            val lastLoadedKey = publicacionesList.lastOrNull()?.id ?: ""
+            reference.orderByKey().startAfter(lastLoadedKey).limitToFirst(CANTIDAD_PUBLICACIONES_POR_CARGA)
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                        val nuevasPublicaciones = mutableListOf<Publicacion>()
+
+                        for (snapshot in dataSnapshot.children) {
+                            val publicacion = snapshot.getValue(Publicacion::class.java)
+                            if (publicacion != null) {
+                                nuevasPublicaciones.add(publicacion)
                             }
-
-                            // Agrega las nuevas publicaciones a la lista existente
-                            publicacionesList.addAll(nuevasPublicaciones)
-
-                            mostrarPublicacionesEnUI(publicacionesList)
                         }
 
-                        override fun onCancelled(databaseError: DatabaseError) {
-                            Toast.makeText(this@MenuPrincipal, "Error al cargar más publicaciones", Toast.LENGTH_SHORT).show()
-                        }
-                    })
-                }
-            } else {
-                Toast.makeText(this, "No hay más publicaciones para cargar", Toast.LENGTH_SHORT).show()
-            }
+                        // Agregamos las nuevas publicaciones
+                        publicacionesList.addAll(nuevasPublicaciones)
+                        mostrarPublicacionesEnUI(publicacionesList)
+                    }
+
+                    override fun onCancelled(databaseError: DatabaseError) {
+                        Toast.makeText(this@MenuPrincipal, "Error al cargar más publicaciones", Toast.LENGTH_SHORT).show()
+                    }
+                })
         }
     }
+
+
     private fun mostrarPublicacionesEnUI(publicaciones: List<Publicacion>) {
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
         val adapter = PublicacionAdapter(publicaciones)
