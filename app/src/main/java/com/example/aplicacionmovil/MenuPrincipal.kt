@@ -14,11 +14,9 @@ import android.text.TextWatcher
 import android.view.Gravity
 import android.view.MenuItem
 import android.view.View
-import android.view.WindowManager
 import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageButton
-import android.widget.Toast
+import android.view.WindowManager
+import android.widget.*
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
@@ -39,8 +37,9 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     private var selectedTime: String = ""
     private lateinit var btnFecha: Button
     private lateinit var btnHora: Button
-    private val publicacionesList = mutableListOf<Publicacion>()
+    private var publicacionesList = mutableListOf<Publicacion>()
     private lateinit var publicacionAdapter: PublicacionAdapter
+    private lateinit var btnLoadMore: Button
 
     private var totalPublicacionesDisponibles = 0
     private var lastLoadedPublicationsCount = 0
@@ -48,23 +47,17 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContentView(R.layout.activity_menu_principal)
         val database = FirebaseDatabase.getInstance()
         val reference: DatabaseReference = database.getReference("publicaciones")
 
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
-        val btnLoadMore = findViewById<Button>(R.id.btnLoadMore)
-
-        btnLoadMore.setOnClickListener {
-            onCargarMasClick()
-        }
 
         publicacionAdapter = PublicacionAdapter(publicacionesList)
         recyclerView.adapter = publicacionAdapter
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        cargarPublicaciones()
+        btnLoadMore = findViewById(R.id.btnLoadMore)
 
         btnToolbar = findViewById(R.id.btn_toolbar)
         btnToolbar.setOnClickListener {
@@ -74,8 +67,7 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         val edtBuscar = findViewById<EditText>(R.id.edtBuscar)
 
         edtBuscar.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-            }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val textoBusqueda = s.toString().toLowerCase()
@@ -89,8 +81,7 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 mostrarPublicacionesEnUI(publicacionesFiltradas)
             }
 
-            override fun afterTextChanged(s: Editable?) {
-            }
+            override fun afterTextChanged(s: Editable?) {}
         })
 
         val toolbar: androidx.appcompat.widget.Toolbar = findViewById(R.id.toolbar_menuprincipal)
@@ -106,26 +97,12 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         val navigationView: NavigationView = findViewById(R.id.nav_view)
         navigationView.setNavigationItemSelectedListener(this)
 
-        reference.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                val nuevasPublicaciones = mutableListOf<Publicacion>()
+        btnLoadMore.setOnClickListener {
+            onCargarMasClick()
+        }
 
-                for (snapshot in dataSnapshot.children) {
-                    val publicacion = snapshot.getValue(Publicacion::class.java)
-                    if (publicacion != null) {
-                        nuevasPublicaciones.add(publicacion)
-                    }
-                }
+        cargarPublicaciones()
 
-                publicacionesList.clear()
-                publicacionesList.addAll(nuevasPublicaciones)
-                mostrarPublicacionesEnUI(publicacionesList)
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {
-                Toast.makeText(this@MenuPrincipal, "Error al cargar las publicaciones", Toast.LENGTH_SHORT).show()
-            }
-        })
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
@@ -157,17 +134,6 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         drawer.closeDrawer(GravityCompat.START)
         return true
     }
-
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        super.onPostCreate(savedInstanceState)
-        toggle.syncState()
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        toggle.onConfigurationChanged(newConfig)
-    }
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (toggle.onOptionsItemSelected(item)) {
             return true
@@ -273,6 +239,15 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
                     reference.child(postId).setValue(publicacion).addOnCompleteListener { task ->
                         if (task.isSuccessful) {
+                            // Limpiar la lista actual de publicaciones
+                            publicacionesList.clear()
+
+                            // Cargar las publicaciones más recientes desde la base de datos
+                            cargarPublicaciones()
+
+                            // Mostrar la lista actualizada en la interfaz de usuario
+                            mostrarPublicacionesEnUI(publicacionesList)
+
                             dialog.dismiss()
                             Toast.makeText(this, "Publicación exitosa", Toast.LENGTH_SHORT).show()
                         } else {
@@ -302,10 +277,10 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         if (userId != null) {
             val reference = FirebaseDatabase.getInstance().getReference("publicaciones")
-            reference.limitToLast(CANTIDAD_PUBLICACIONES_POR_CARGA).addValueEventListener(object : ValueEventListener {
+            reference.orderByKey().limitToLast(CANTIDAD_PUBLICACIONES_POR_CARGA).addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     totalPublicacionesDisponibles = dataSnapshot.childrenCount.toInt()
-                    val nuevasPublicaciones = mutableListOf<Publicacion>()
+                    var nuevasPublicaciones = mutableListOf<Publicacion>()
 
                     for (snapshot in dataSnapshot.children) {
                         val publicacion = snapshot.getValue(Publicacion::class.java)
@@ -314,9 +289,18 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                         }
                     }
 
+                    // Aseguramos que no haya más de 5 publicaciones en la lista inicial
+                    if (nuevasPublicaciones.size > CANTIDAD_PUBLICACIONES_POR_CARGA) {
+                        nuevasPublicaciones = nuevasPublicaciones.take(CANTIDAD_PUBLICACIONES_POR_CARGA).toMutableList()
+                    }
+
                     lastLoadedPublicationsCount = nuevasPublicaciones.size
                     publicacionesList.clear()
-                    publicacionesList.addAll(nuevasPublicaciones)
+                    if (nuevasPublicaciones.isNotEmpty()) {
+                        publicacionesList.addAll(nuevasPublicaciones.reversed())
+                    }
+
+                    // Si deseas mostrar las publicaciones en la pantalla, llama a la función correspondiente
                     mostrarPublicacionesEnUI(publicacionesList)
                 }
 
@@ -332,29 +316,50 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         if (userId != null) {
             val reference = FirebaseDatabase.getInstance().getReference("publicaciones")
 
-            // Utilizamos el último límite cargado como punto de referencia
-            val lastLoadedKey = publicacionesList.lastOrNull()?.id ?: ""
-            reference.orderByKey().startAfter(lastLoadedKey).limitToFirst(CANTIDAD_PUBLICACIONES_POR_CARGA)
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(dataSnapshot: DataSnapshot) {
-                        val nuevasPublicaciones = mutableListOf<Publicacion>()
+            if (publicacionesList.isNotEmpty()) {
+                // Utilizamos el último elemento cargado como punto de referencia
+                val lastLoadedKey = publicacionesList.lastOrNull()?.id ?: ""
+                reference.orderByKey().endBefore(lastLoadedKey).limitToLast(CANTIDAD_PUBLICACIONES_POR_CARGA)
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(dataSnapshot: DataSnapshot) {
+                            val nuevasPublicaciones = mutableListOf<Publicacion>()
 
-                        for (snapshot in dataSnapshot.children) {
-                            val publicacion = snapshot.getValue(Publicacion::class.java)
-                            if (publicacion != null) {
-                                nuevasPublicaciones.add(publicacion)
+                            for (snapshot in dataSnapshot.children) {
+                                val publicacion = snapshot.getValue(Publicacion::class.java)
+                                if (publicacion != null) {
+                                    nuevasPublicaciones.add(publicacion)
+                                }
+                            }
+
+                            // Aseguramos que no haya más de 5 publicaciones en la lista
+                            if (nuevasPublicaciones.size > CANTIDAD_PUBLICACIONES_POR_CARGA) {
+                                nuevasPublicaciones.removeAt(0) // Eliminamos la duplicada
+                            }
+
+                            // Ordenamos las nuevas publicaciones de la más reciente a la más antigua
+                            val nuevasPublicacionesOrdenadas = nuevasPublicaciones.reversed()
+
+                            // Agregamos las nuevas publicaciones al final de la lista
+                            publicacionesList.addAll(nuevasPublicacionesOrdenadas)
+
+                            // Mostramos las publicaciones en la pantalla solo cuando es necesario (en este caso, al cargar más)
+                            mostrarPublicacionesEnUI(publicacionesList)
+
+                            // Verificamos si ya se han cargado todas las publicaciones
+                            if (publicacionesList.size >= totalPublicacionesDisponibles) {
+                                // Puedes mostrar un mensaje
+                                Toast.makeText(this@MenuPrincipal, "Todas las publicaciones han sido cargadas", Toast.LENGTH_SHORT).show()
                             }
                         }
 
-                        // Agregamos las nuevas publicaciones
-                        publicacionesList.addAll(nuevasPublicaciones)
-                        mostrarPublicacionesEnUI(publicacionesList)
-                    }
-
-                    override fun onCancelled(databaseError: DatabaseError) {
-                        Toast.makeText(this@MenuPrincipal, "Error al cargar más publicaciones", Toast.LENGTH_SHORT).show()
-                    }
-                })
+                        override fun onCancelled(databaseError: DatabaseError) {
+                            Toast.makeText(this@MenuPrincipal, "Error al cargar más publicaciones", Toast.LENGTH_SHORT).show()
+                        }
+                    })
+            } else {
+                // Manejar el caso cuando la lista está vacía
+                Toast.makeText(this@MenuPrincipal, "No hay más publicaciones para cargar", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -366,3 +371,4 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         recyclerView.adapter = adapter
     }
 }
+
