@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- res/layout/item_publicacion.xml -->
 <LinearLayout
+    xmlns:tools="http://schemas.android.com/tools"
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -8,7 +9,8 @@
     android:layout_marginEnd="16dp"
     android:layout_marginTop="8dp"
     android:orientation="vertical"
-    android:background="@color/app">
+    android:background="@color/app"
+    tools:context=".MenuPrincipal">
 
     <!-- Título y fecha/hora en una fila horizontal -->
 
@@ -57,4 +59,13 @@
         android:gravity="center"
         android:text="Ubicación"
         android:textColor="@color/white" />
+
+    <ImageButton
+        android:id="@+id/btn_IconoComentarios"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Comentarios"
+        android:src="@drawable/comment" />
+
 </LinearLayout>

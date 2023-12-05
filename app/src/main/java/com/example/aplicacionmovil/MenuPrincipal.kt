@@ -7,11 +7,14 @@ import android.app.Dialog
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
+import android.widget.ImageButton
 import android.content.res.Configuration
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
@@ -28,7 +31,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import java.util.Calendar
 
-class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener{
 
     private lateinit var drawer: DrawerLayout
     private lateinit var toggle: ActionBarDrawerToggle
@@ -53,7 +56,8 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
 
-        publicacionAdapter = PublicacionAdapter(publicacionesList)
+        publicacionAdapter = PublicacionAdapter()
+
         recyclerView.adapter = publicacionAdapter
         recyclerView.layoutManager = LinearLayoutManager(this)
 
@@ -103,8 +107,8 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
         cargarPublicaciones()
 
-    }
 
+    }
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.nav_inicio -> {
@@ -134,6 +138,7 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         drawer.closeDrawer(GravityCompat.START)
         return true
     }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (toggle.onOptionsItemSelected(item)) {
             return true
@@ -227,7 +232,7 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
                 if (postId != null) {
                     val publicacion = Publicacion(
-                        postId, // Utiliza la clave generada como el ID
+                        postId,
                         titulo,
                         descripcion,
                         ubicacion,
@@ -239,15 +244,9 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
                     reference.child(postId).setValue(publicacion).addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            // Limpiar la lista actual de publicaciones
                             publicacionesList.clear()
-
-                            // Cargar las publicaciones más recientes desde la base de datos
                             cargarPublicaciones()
-
-                            // Mostrar la lista actualizada en la interfaz de usuario
                             mostrarPublicacionesEnUI(publicacionesList)
-
                             dialog.dismiss()
                             Toast.makeText(this, "Publicación exitosa", Toast.LENGTH_SHORT).show()
                         } else {
@@ -289,7 +288,6 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                         }
                     }
 
-                    // Aseguramos que no haya más de 5 publicaciones en la lista inicial
                     if (nuevasPublicaciones.size > CANTIDAD_PUBLICACIONES_POR_CARGA) {
                         nuevasPublicaciones = nuevasPublicaciones.take(CANTIDAD_PUBLICACIONES_POR_CARGA).toMutableList()
                     }
@@ -300,7 +298,6 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                         publicacionesList.addAll(nuevasPublicaciones.reversed())
                     }
 
-                    // Si deseas mostrar las publicaciones en la pantalla, llama a la función correspondiente
                     mostrarPublicacionesEnUI(publicacionesList)
                 }
 
@@ -317,7 +314,6 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             val reference = FirebaseDatabase.getInstance().getReference("publicaciones")
 
             if (publicacionesList.isNotEmpty()) {
-                // Utilizamos el último elemento cargado como punto de referencia
                 val lastLoadedKey = publicacionesList.lastOrNull()?.id ?: ""
                 reference.orderByKey().endBefore(lastLoadedKey).limitToLast(CANTIDAD_PUBLICACIONES_POR_CARGA)
                     .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -331,23 +327,16 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                                 }
                             }
 
-                            // Aseguramos que no haya más de 5 publicaciones en la lista
                             if (nuevasPublicaciones.size > CANTIDAD_PUBLICACIONES_POR_CARGA) {
-                                nuevasPublicaciones.removeAt(0) // Eliminamos la duplicada
+                                nuevasPublicaciones.removeAt(0)
                             }
 
-                            // Ordenamos las nuevas publicaciones de la más reciente a la más antigua
                             val nuevasPublicacionesOrdenadas = nuevasPublicaciones.reversed()
-
-                            // Agregamos las nuevas publicaciones al final de la lista
                             publicacionesList.addAll(nuevasPublicacionesOrdenadas)
 
-                            // Mostramos las publicaciones en la pantalla solo cuando es necesario (en este caso, al cargar más)
                             mostrarPublicacionesEnUI(publicacionesList)
 
-                            // Verificamos si ya se han cargado todas las publicaciones
                             if (publicacionesList.size >= totalPublicacionesDisponibles) {
-                                // Puedes mostrar un mensaje
                                 Toast.makeText(this@MenuPrincipal, "Todas las publicaciones han sido cargadas", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -357,18 +346,77 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                         }
                     })
             } else {
-                // Manejar el caso cuando la lista está vacía
                 Toast.makeText(this@MenuPrincipal, "No hay más publicaciones para cargar", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-
     private fun mostrarPublicacionesEnUI(publicaciones: List<Publicacion>) {
-        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
-        val adapter = PublicacionAdapter(publicaciones)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = adapter
-    }
-}
+        publicacionAdapter.submitList(publicaciones)
+        publicacionAdapter.notifyDataSetChanged()
 
+        // Configura el OnClickListener para el botón de comentarios en cada elemento de la lista
+        publicacionAdapter.setOnItemClickListener(object : PublicacionAdapter.OnItemClickListener {
+            override fun onItemClick(position: Int) {
+                // Aquí obtienes la publicación correspondiente a la posición
+                val publicacion = publicaciones[position]
+
+                // Aquí configuras la lógica para mostrar el diálogo de comentarios
+                mostrarDialogoEscribirComentarios()
+            }
+        })
+
+    }
+    private fun mostrarDialogoEscribirComentarios() {
+        val dialog_a = Dialog(this)
+        dialog_a.setContentView(R.layout.dialog_escribircomentarios)
+
+        val layoutParams = WindowManager.LayoutParams()
+        layoutParams.copyFrom(dialog_a.window?.attributes)
+        layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT
+        layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT
+        layoutParams.gravity = Gravity.CENTER
+
+        dialog_a.window?.attributes = layoutParams
+
+        val ediTextComentario = dialog_a.findViewById<EditText>(R.id.ediTextComentario)
+        val btnComentar = dialog_a.findViewById<Button>(R.id.btnComentar)
+
+        btnComentar.setOnClickListener {
+            val comentarioText = ediTextComentario.text.toString().trim()
+            val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+            if (userId != null) {
+                if (comentarioText.isNotEmpty()) {
+                    val database = FirebaseDatabase.getInstance()
+                    val reference = database.getReference("comentarios")
+
+                    val comentarioId = reference.push().key
+
+                    if (comentarioId != null) {
+                        val comentario = Comentario(
+                            id = comentarioId,
+                            texto = comentarioText,
+                            userId = userId
+                        )
+
+                        reference.child(comentarioId).setValue(comentario).addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                // Realiza las acciones necesarias después de publicar el comentario
+                                dialog_a.dismiss()
+                                Toast.makeText(this, "Comentario exitoso", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(this, "Error al comentar: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                } else {
+                    Toast.makeText(this, "Por favor, ingresa un comentario", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        dialog_a.show()
+    }
+
+}

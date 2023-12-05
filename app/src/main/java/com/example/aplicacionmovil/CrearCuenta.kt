@@ -92,6 +92,7 @@ class CrearCuenta : AppCompatActivity() {
                 }
                 updateButtonEnabledState()
             }
+
         })
 
         et_Rut.addTextChangedListener(object : TextWatcher {

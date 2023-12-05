@@ -8,5 +8,6 @@ data class Publicacion(
     val fecha: String = "",
     val hora: String = "",
     val categoria: String = "",
-    val userId: String = ""
+    val userId: String = "",
+    val mostrarBotonComentarios: Boolean = false
 )
