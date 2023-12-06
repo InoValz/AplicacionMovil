@@ -1,44 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="150dp"
-    android:id="@+id/dialogComentariosContainer">
+    android:orientation="vertical">
 
-    <!-- Contenedor del diálogo -->
-    <LinearLayout
+    <!-- Botón de cierre -->
+    <ImageButton
+        android:id="@+id/btnCerrar"
+        android:layout_width="wrap_content"
+        android:layout_height="30dp"
+        android:layout_gravity="start"
+        android:layout_marginBottom="8dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:contentDescription="Cerrar"
+        android:src="@android:drawable/ic_menu_close_clear_cancel" />
+
+    <!-- RecyclerView para mostrar los comentarios -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewComentarios"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="@android:color/white"
+        android:maxHeight="700dp"
         android:padding="16dp"
-        android:layout_margin="16dp"
-        android:elevation="4dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:id="@+id/dialogComentariosLayout">
-
-        <!-- Botón de cierre -->
-        <ImageView
-            android:id="@+id/btnCerrar"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:background="?android:attr/selectableItemBackground"
-            android:layout_gravity="start"
-            android:contentDescription="Cerrar"
-            android:layout_marginBottom="8dp"/>
-
-        <!-- Contenido de los comentarios -->
-        <TextView
-            android:id="@+id/comentariosTextView"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:padding="16dp"/>
-    </LinearLayout>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:scrollbars="vertical"/>
+</LinearLayout>

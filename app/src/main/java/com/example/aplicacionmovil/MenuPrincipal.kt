@@ -1,5 +1,6 @@
 package com.example.aplicacionmovil
 
+import ComentariosAdapter
 import PublicacionAdapter
 import android.app.AlertDialog
 import android.app.DatePickerDialog
@@ -31,17 +32,18 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import java.util.Calendar
 
-class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener{
-
+class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener,
+    PublicacionAdapter.OnComentariosButtonClickListener {
     private lateinit var drawer: DrawerLayout
     private lateinit var toggle: ActionBarDrawerToggle
     private lateinit var btnToolbar: ImageButton
+
     private var selectedDate: String = ""
     private var selectedTime: String = ""
-    private lateinit var btnFecha: Button
-    private lateinit var btnHora: Button
+
     private var publicacionesList = mutableListOf<Publicacion>()
     private lateinit var publicacionAdapter: PublicacionAdapter
+
     private lateinit var btnLoadMore: Button
 
     private var totalPublicacionesDisponibles = 0
@@ -53,20 +55,6 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         setContentView(R.layout.activity_menu_principal)
         val database = FirebaseDatabase.getInstance()
         val reference: DatabaseReference = database.getReference("publicaciones")
-
-        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
-
-        publicacionAdapter = PublicacionAdapter()
-
-        recyclerView.adapter = publicacionAdapter
-        recyclerView.layoutManager = LinearLayoutManager(this)
-
-        btnLoadMore = findViewById(R.id.btnLoadMore)
-
-        btnToolbar = findViewById(R.id.btn_toolbar)
-        btnToolbar.setOnClickListener {
-            mostrarDialogoPublicacion()
-        }
 
         val edtBuscar = findViewById<EditText>(R.id.edtBuscar)
 
@@ -88,6 +76,25 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             override fun afterTextChanged(s: Editable?) {}
         })
 
+        initializeViews()
+        setupDrawer()
+        setupListeners()
+        cargarPublicaciones()
+
+    }
+
+    private fun initializeViews() {
+        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+
+        publicacionAdapter = PublicacionAdapter()
+        publicacionAdapter.setOnComentariosButtonClickListener(this)
+        recyclerView.adapter = publicacionAdapter
+
+        btnLoadMore = findViewById(R.id.btnLoadMore)
+        btnToolbar = findViewById(R.id.btn_toolbar)
+    }
+    private fun setupDrawer() {
         val toolbar: androidx.appcompat.widget.Toolbar = findViewById(R.id.toolbar_menuprincipal)
         setSupportActionBar(toolbar)
 
@@ -97,18 +104,33 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setHomeButtonEnabled(true)
+    }
 
+    private fun setupListeners() {
         val navigationView: NavigationView = findViewById(R.id.nav_view)
         navigationView.setNavigationItemSelectedListener(this)
+
+        btnToolbar.setOnClickListener {
+            mostrarDialogoPublicacion()
+        }
 
         btnLoadMore.setOnClickListener {
             onCargarMasClick()
         }
-
-        cargarPublicaciones()
-
-
     }
+
+    override fun onComentariosButtonClick(position: Int, tipoBoton: PublicacionAdapter.TipoBoton) {
+        val publicacion = publicacionesList[position]
+
+        when (tipoBoton) {
+            PublicacionAdapter.TipoBoton.ESCRIBIR -> mostrarDialogoEscribirComentarios()
+            PublicacionAdapter.TipoBoton.LEER -> {
+                val comentarios = publicacion.comentarios.map { it.texto }
+                mostrarDialogoLeerComentarios(comentarios)
+            }
+        }
+    }
+
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.nav_inicio -> {
@@ -156,6 +178,8 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     private fun mostrarDialogoPublicacion() {
         val dialog = Dialog(this)
         dialog.setContentView(R.layout.dialog_publicacion)
+
+        val tipoBoton = PublicacionAdapter.TipoBoton.ESCRIBIR
 
         val layoutParams = WindowManager.LayoutParams()
         layoutParams.copyFrom(dialog.window?.attributes)
@@ -239,7 +263,8 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                         fecha,
                         hora,
                         categoria,
-                        userId
+                        userId,
+                        tipoBoton = tipoBoton
                     )
 
                     reference.child(postId).setValue(publicacion).addOnCompleteListener { task ->
@@ -355,18 +380,8 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         publicacionAdapter.submitList(publicaciones)
         publicacionAdapter.notifyDataSetChanged()
 
-        // Configura el OnClickListener para el botón de comentarios en cada elemento de la lista
-        publicacionAdapter.setOnItemClickListener(object : PublicacionAdapter.OnItemClickListener {
-            override fun onItemClick(position: Int) {
-                // Aquí obtienes la publicación correspondiente a la posición
-                val publicacion = publicaciones[position]
-
-                // Aquí configuras la lógica para mostrar el diálogo de comentarios
-                mostrarDialogoEscribirComentarios()
-            }
-        })
-
     }
+
     private fun mostrarDialogoEscribirComentarios() {
         val dialog_a = Dialog(this)
         dialog_a.setContentView(R.layout.dialog_escribircomentarios)
@@ -383,7 +398,7 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         val btnComentar = dialog_a.findViewById<Button>(R.id.btnComentar)
 
         btnComentar.setOnClickListener {
-            val comentarioText = ediTextComentario.text.toString().trim()
+            val comentarioText = ediTextComentario.text.toString()
             val userId = FirebaseAuth.getInstance().currentUser?.uid
 
             if (userId != null) {
@@ -417,6 +432,37 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         }
 
         dialog_a.show()
+    }
+
+    private fun mostrarDialogoLeerComentarios(comentarios: List<String>) {
+
+        val dialog_b = Dialog(this)
+        dialog_b.setContentView(R.layout.dialog_comentarios)
+
+        val layoutParams = WindowManager.LayoutParams()
+        layoutParams.copyFrom(dialog_b.window?.attributes)
+        layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT
+        layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT
+        layoutParams.gravity = Gravity.CENTER
+
+        dialog_b.window?.attributes = layoutParams
+
+        val recyclerViewComentarios = dialog_b.findViewById<RecyclerView>(R.id.recyclerViewComentarios)
+        val comentariosAdapter = ComentariosAdapter()
+
+        recyclerViewComentarios.adapter = comentariosAdapter
+        recyclerViewComentarios.layoutManager = LinearLayoutManager(this)
+
+        // Configura el adaptador con la lista de comentarios
+        comentariosAdapter.setComentarios(comentarios)
+
+        // Botón para cerrar el diálogo de leer comentarios
+        val btnCerrar = dialog_b.findViewById<ImageButton>(R.id.btnCerrar)
+        btnCerrar.setOnClickListener {
+            dialog_b.dismiss()
+        }
+
+        dialog_b.show()
     }
 
 }

@@ -10,15 +10,23 @@ import com.example.aplicacionmovil.Publicacion
 import com.example.aplicacionmovil.R
 
 class PublicacionAdapter : ListAdapter<Publicacion, PublicacionAdapter.PublicacionViewHolder>(DIFF_CALLBACK) {
-
-    private var onItemClickListener: OnItemClickListener? = null
-
     interface OnItemClickListener {
         fun onItemClick(position: Int)
     }
 
+    interface OnComentariosButtonClickListener {
+        fun onComentariosButtonClick(position: Int, tipoBoton: PublicacionAdapter.TipoBoton)
+    }
+
+    private var onItemClickListener: OnItemClickListener? = null
+    private var onComentariosButtonClickListener: OnComentariosButtonClickListener? = null
+
     fun setOnItemClickListener(listener: OnItemClickListener) {
         this.onItemClickListener = listener
+    }
+
+    fun setOnComentariosButtonClickListener(listener: OnComentariosButtonClickListener) {
+        this.onComentariosButtonClickListener = listener
     }
 
     inner class PublicacionViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -27,13 +35,20 @@ class PublicacionAdapter : ListAdapter<Publicacion, PublicacionAdapter.Publicaci
         val ubicacionTextView: TextView = itemView.findViewById(R.id.ubicacionTextView)
         val fechaHoraTextView: TextView = itemView.findViewById(R.id.fechaHoraTextView)
         val CategoriaTextView: TextView = itemView.findViewById(R.id.CategoriaTextView)
-        val btnIconoComentarios: ImageButton = itemView.findViewById(R.id.btn_IconoComentarios)
-
+        val btn_IconoComentarios_escribir: ImageButton = itemView.findViewById(R.id.btn_IconoComentarios_escribir)
+        val btn_IconoComentarios_leer: ImageButton = itemView.findViewById(R.id.btn_IconoComentarios_leer)
         init {
-            btnIconoComentarios.setOnClickListener {
+            btn_IconoComentarios_escribir.setOnClickListener {
                 val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
-                    onItemClickListener?.onItemClick(position)
+                    onComentariosButtonClickListener?.onComentariosButtonClick(position, PublicacionAdapter.TipoBoton.ESCRIBIR)
+                }
+            }
+
+            btn_IconoComentarios_leer.setOnClickListener {
+                val position = adapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    onComentariosButtonClickListener?.onComentariosButtonClick(position, TipoBoton.LEER)
                 }
             }
         }
@@ -68,8 +83,10 @@ class PublicacionAdapter : ListAdapter<Publicacion, PublicacionAdapter.Publicaci
         holder.fechaHoraTextView.text = fechaHora
 
         holder.CategoriaTextView.text = publicacion.categoria
-
-        // Siempre establece la visibilidad del botón de comentarios
-        holder.btnIconoComentarios.visibility = View.VISIBLE
     }
+    enum class TipoBoton {
+        ESCRIBIR, LEER
+    }
+
 }
+

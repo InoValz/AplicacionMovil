@@ -60,12 +60,27 @@
         android:text="Ubicación"
         android:textColor="@color/white" />
 
-    <ImageButton
-        android:id="@+id/btn_IconoComentarios"
-        android:layout_width="wrap_content"
+    <!-- Botones uno al lado del otro -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="Comentarios"
-        android:src="@drawable/comment" />
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <ImageButton
+            android:id="@+id/btn_IconoComentarios_escribir"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Comentarios"
+            android:src="@drawable/comentario_escribir" />
+
+        <ImageButton
+            android:id="@+id/btn_IconoComentarios_leer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Comentarios"
+            android:src="@drawable/comentario_leer" />
+    </LinearLayout>
 
 </LinearLayout>
+
