@@ -12,6 +12,7 @@ import android.widget.ImageButton
 import android.content.res.Configuration
 import android.os.Bundle
 import android.text.Editable
+import android.text.InputFilter
 import android.text.TextWatcher
 import android.util.Log
 import android.view.Gravity
@@ -123,10 +124,9 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         val publicacion = publicacionesList[position]
 
         when (tipoBoton) {
-            PublicacionAdapter.TipoBoton.ESCRIBIR -> mostrarDialogoEscribirComentarios()
+            PublicacionAdapter.TipoBoton.ESCRIBIR -> mostrarDialogoEscribirComentarios(publicacion)
             PublicacionAdapter.TipoBoton.LEER -> {
-                val comentarios = publicacion.comentarios.map { it.texto }
-                mostrarDialogoLeerComentarios(comentarios)
+                cargarComentarios(publicacion)
             }
         }
     }
@@ -178,8 +178,6 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     private fun mostrarDialogoPublicacion() {
         val dialog = Dialog(this)
         dialog.setContentView(R.layout.dialog_publicacion)
-
-        val tipoBoton = PublicacionAdapter.TipoBoton.ESCRIBIR
 
         val layoutParams = WindowManager.LayoutParams()
         layoutParams.copyFrom(dialog.window?.attributes)
@@ -248,7 +246,8 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             val categoria = categoriaSeleccionada
             val userId = FirebaseAuth.getInstance().currentUser?.uid
 
-            if (userId != null) {
+            // Realiza la validación antes de publicar
+            if (titulo.isNotEmpty() && descripcion.isNotEmpty() && ubicacion.isNotEmpty() && fecha.isNotEmpty() && hora.isNotEmpty() && categoria.isNotEmpty() && userId != null) {
                 val database = FirebaseDatabase.getInstance()
                 val reference = database.getReference("publicaciones")
 
@@ -263,8 +262,7 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                         fecha,
                         hora,
                         categoria,
-                        userId,
-                        tipoBoton = tipoBoton
+                        userId
                     )
 
                     reference.child(postId).setValue(publicacion).addOnCompleteListener { task ->
@@ -279,6 +277,8 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                         }
                     }
                 }
+            } else {
+                Toast.makeText(this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -309,9 +309,13 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                     for (snapshot in dataSnapshot.children) {
                         val publicacion = snapshot.getValue(Publicacion::class.java)
                         if (publicacion != null) {
+                            if (snapshot.child("estado").getValue() == null) {
+                                publicacion.estado = false
+                            }
                             nuevasPublicaciones.add(publicacion)
                         }
                     }
+
 
                     if (nuevasPublicaciones.size > CANTIDAD_PUBLICACIONES_POR_CARGA) {
                         nuevasPublicaciones = nuevasPublicaciones.take(CANTIDAD_PUBLICACIONES_POR_CARGA).toMutableList()
@@ -348,9 +352,13 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                             for (snapshot in dataSnapshot.children) {
                                 val publicacion = snapshot.getValue(Publicacion::class.java)
                                 if (publicacion != null) {
+                                    if (snapshot.child("estado").getValue() == null) {
+                                        publicacion.estado = false
+                                    }
                                     nuevasPublicaciones.add(publicacion)
                                 }
                             }
+
 
                             if (nuevasPublicaciones.size > CANTIDAD_PUBLICACIONES_POR_CARGA) {
                                 nuevasPublicaciones.removeAt(0)
@@ -382,87 +390,144 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
     }
 
-    private fun mostrarDialogoEscribirComentarios() {
-        val dialog_a = Dialog(this)
-        dialog_a.setContentView(R.layout.dialog_escribircomentarios)
+    private fun mostrarDialogoEscribirComentarios(publicacion: Publicacion) {
+        val dialog = Dialog(this)
+        dialog.setContentView(R.layout.dialog_escribircomentarios)
 
         val layoutParams = WindowManager.LayoutParams()
-        layoutParams.copyFrom(dialog_a.window?.attributes)
+        layoutParams.copyFrom(dialog.window?.attributes)
         layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT
         layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT
         layoutParams.gravity = Gravity.CENTER
 
-        dialog_a.window?.attributes = layoutParams
+        dialog.window?.attributes = layoutParams
 
-        val ediTextComentario = dialog_a.findViewById<EditText>(R.id.ediTextComentario)
-        val btnComentar = dialog_a.findViewById<Button>(R.id.btnComentar)
+        val ediTextComentario = dialog.findViewById<EditText>(R.id.ediTextComentario)
 
-        btnComentar.setOnClickListener {
-            val comentarioText = ediTextComentario.text.toString()
-            val userId = FirebaseAuth.getInstance().currentUser?.uid
+        val maxWords = 200
+        ediTextComentario.filters = arrayOf(InputFilter.LengthFilter(maxWords))
 
-            if (userId != null) {
-                if (comentarioText.isNotEmpty()) {
-                    val database = FirebaseDatabase.getInstance()
-                    val reference = database.getReference("comentarios")
+        ediTextComentario.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
-                    val comentarioId = reference.push().key
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                // Verificar el número de palabras
+                val words = s?.trim()?.split("\\s+".toRegex())?.size ?: 0
 
-                    if (comentarioId != null) {
-                        val comentario = Comentario(
-                            id = comentarioId,
-                            texto = comentarioText,
-                            userId = userId
-                        )
-
-                        reference.child(comentarioId).setValue(comentario).addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                // Realiza las acciones necesarias después de publicar el comentario
-                                dialog_a.dismiss()
-                                Toast.makeText(this, "Comentario exitoso", Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(this, "Error al comentar: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }
+                // Mostrar mensaje si se supera el límite
+                if (words > maxWords) {
+                    ediTextComentario.error = "Límite de 200 palabras alcanzado"
                 } else {
-                    Toast.makeText(this, "Por favor, ingresa un comentario", Toast.LENGTH_SHORT).show()
+                    ediTextComentario.error = null
                 }
             }
+
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        val btnComentar = dialog.findViewById<Button>(R.id.btnComentar)
+
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+        if (userId != null) {
+            val database = FirebaseDatabase.getInstance()
+            val reference = database.getReference("comentarios")
+
+            // Verificar el número de comentarios existentes
+            reference.orderByChild("publicacionId").equalTo(publicacion.id).addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+                    val comentariosCount = dataSnapshot.childrenCount.toInt()
+
+                    btnComentar.setOnClickListener {
+                        val comentarioText = ediTextComentario.text.toString()
+
+                        if (comentarioText.isNotEmpty()) {
+                            if (comentariosCount < 8) {
+                                val comentarioId = reference.push().key
+
+                                if (comentarioId != null) {
+                                    val comentario = Comentario(
+                                        id = comentarioId,
+                                        texto = comentarioText,
+                                        userId = userId,
+                                        publicacionId = publicacion.id
+                                    )
+
+                                    reference.child(comentarioId).setValue(comentario).addOnCompleteListener { task ->
+                                        if (task.isSuccessful) {
+                                            // Realiza las acciones necesarias después de publicar el comentario
+                                            dialog.dismiss()
+                                            Toast.makeText(this@MenuPrincipal, "Comentario exitoso", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast.makeText(this@MenuPrincipal, "Error al comentar: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                            } else {
+                                Toast.makeText(this@MenuPrincipal, "Solo se permiten hasta 8 comentarios", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Toast.makeText(this@MenuPrincipal, "Por favor, ingresa un comentario", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+                    // Handle error
+                }
+            })
         }
 
-        dialog_a.show()
+        dialog.show()
     }
 
-    private fun mostrarDialogoLeerComentarios(comentarios: List<String>) {
-
-        val dialog_b = Dialog(this)
-        dialog_b.setContentView(R.layout.dialog_comentarios)
+    private fun cargarComentarios(publicacion: Publicacion) {
+        val dialog = Dialog(this)
+        dialog.setContentView(R.layout.dialog_comentarios)
 
         val layoutParams = WindowManager.LayoutParams()
-        layoutParams.copyFrom(dialog_b.window?.attributes)
+        layoutParams.copyFrom(dialog.window?.attributes)
         layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT
         layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT
         layoutParams.gravity = Gravity.CENTER
 
-        dialog_b.window?.attributes = layoutParams
+        dialog.window?.attributes = layoutParams
 
-        val recyclerViewComentarios = dialog_b.findViewById<RecyclerView>(R.id.recyclerViewComentarios)
+        val textoComentario = dialog.findViewById<TextView>(R.id.textoComentario)
+        val recyclerViewComentarios = dialog.findViewById<RecyclerView>(R.id.recyclerViewComentarios)
         val comentariosAdapter = ComentariosAdapter()
 
-        recyclerViewComentarios.adapter = comentariosAdapter
+        // Obtén los comentarios para la publicación específica desde la base de datos
+        val reference = FirebaseDatabase.getInstance().getReference("comentarios")
+        reference.orderByChild("publicacionId").equalTo(publicacion.id)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+                    val comentariosList = mutableListOf<Comentario>()
+
+                    for (snapshot in dataSnapshot.children) {
+                        val comentario = snapshot.getValue(Comentario::class.java)
+                        if (comentario != null) {
+                            comentariosList.add(comentario)
+                        }
+                    }
+
+                    comentariosAdapter.submitList(comentariosList)
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+                    // Maneja el error
+                }
+            })
+
         recyclerViewComentarios.layoutManager = LinearLayoutManager(this)
+        recyclerViewComentarios.adapter = comentariosAdapter
 
-        // Configura el adaptador con la lista de comentarios
-        comentariosAdapter.setComentarios(comentarios)
-
-        // Botón para cerrar el diálogo de leer comentarios
-        val btnCerrar = dialog_b.findViewById<ImageButton>(R.id.btnCerrar)
+        // Botón para cerrar el diálogo de comentarios
+        val btnCerrar = dialog.findViewById<ImageButton>(R.id.btnCerrar)
         btnCerrar.setOnClickListener {
-            dialog_b.dismiss()
+            dialog.dismiss()
         }
 
-        dialog_b.show()
+        dialog.show()
     }
-
 }

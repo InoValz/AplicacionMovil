@@ -4,4 +4,8 @@
     <color name="white">#FFFFFFFF</color>
     <color name="app">#FF3A9BB8</color>
     <color name="red">#CD1F1F</color>
-    </resources>
+
+    <color name="colorRevisado">#0F830F</color> <!-- Verde -->
+    <color name="colorNoRevisado">#FF0000</color> <!-- Rojo -->
+
+</resources>

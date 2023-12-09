@@ -13,8 +13,9 @@ data class Publicacion(
     val categoria: String = "",
     val userId: String = "",
     val comentarios: List<Comentario> = mutableListOf(),
-    val tipoBoton: PublicacionAdapter.TipoBoton = PublicacionAdapter.TipoBoton.ESCRIBIR,
+    var estado: Boolean = false,
+    var color: Boolean =false
 ) {
     // Constructor sin argumentos necesario para Firebase
-    constructor() : this("", "", "", "", "", "", "", "", mutableListOf(), PublicacionAdapter.TipoBoton.ESCRIBIR)
+    constructor() : this("", "", "", "", "", "", "", "", mutableListOf())
 }

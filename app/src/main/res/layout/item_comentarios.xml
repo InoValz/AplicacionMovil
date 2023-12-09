@@ -1,21 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="16dp"
-    android:layout_marginEnd="16dp"
-    android:layout_marginTop="8dp"
     android:orientation="vertical"
-    android:background="@color/app">
+    android:padding="16dp"
+    android:background="@color/app"
+    android:layout_margin="8dp">
 
-    <!-- Texto del comentario -->
     <TextView
         android:id="@+id/textoComentario"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="#B41616" />
-
-    <!-- Otros elementos del comentario, si los hay -->
+        android:textColor="@android:color/white"
+        android:text="Hola"
+        android:textSize="18sp"
+        android:textStyle="bold"/>
 
 </LinearLayout>

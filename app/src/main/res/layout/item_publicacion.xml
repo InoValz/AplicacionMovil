@@ -20,13 +20,17 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:text="Categoría"
-        android:textColor="@color/white" />
+        android:textColor="@color/white"
+        android:layout_marginBottom="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"/>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center">
+        android:gravity="center"
+        >
 
         <TextView
             android:id="@+id/tituloTextView"
@@ -35,14 +39,20 @@
             android:layout_weight="1"
             android:text="Título"
             android:textColor="@color/white"
-            android:textSize="18sp"/>
+            android:textSize="18sp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"/>
 
         <TextView
             android:id="@+id/fechaHoraTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Fecha y Hora"
-            android:textColor="@color/white" />
+            android:textColor="@color/white"
+            android:layout_marginBottom="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"/>
     </LinearLayout>
 
     <TextView
@@ -50,7 +60,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Descripción"
-        android:textColor="@color/white" />
+        android:textColor="@color/white"
+        android:layout_marginBottom="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"/>
 
     <TextView
         android:id="@+id/ubicacionTextView"
@@ -58,7 +71,10 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:text="Ubicación"
-        android:textColor="@color/white" />
+        android:textColor="@color/white"
+        android:layout_marginBottom="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"/>
 
     <!-- Botones uno al lado del otro -->
     <LinearLayout
@@ -80,6 +96,16 @@
             android:layout_height="wrap_content"
             android:text="Comentarios"
             android:src="@drawable/comentario_leer" />
+
+        <!-- Agregar esto al diseño de tu elemento de lista -->
+        <Button
+            android:id="@+id/btnCambiarEstado"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Estado: "
+            android:backgroundTint="@color/red"
+            />
+
     </LinearLayout>
 
 </LinearLayout>
