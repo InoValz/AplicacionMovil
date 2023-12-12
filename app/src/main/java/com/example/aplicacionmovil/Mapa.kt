@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.location.Location
 import android.os.Bundle
 import android.view.MenuItem
 import android.widget.Toast
@@ -23,6 +24,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
+
 class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
 
     private lateinit var drawer: DrawerLayout
@@ -95,39 +97,52 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
-        createMarker()
 
+        // Solicitar permisos de ubicación
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                location?.let {
-                    val currentLatLng = LatLng(location.latitude, location.longitude)
-                    map.addMarker(MarkerOptions().position(currentLatLng).title("Mi Ubicación"))
-                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f))
-                }
-            }
+            // Permiso ya concedido
+            getDeviceLocation()
         } else {
+            // Solicitar permiso si no se ha concedido
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                 PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION
             )
         }
+
     }
 
-
-    private fun createMarker() {
-        val coordinates = LatLng(-37.46973, -72.35366)
-        val marker = MarkerOptions().position(coordinates).title("Los Angeles Chile")
-        map.addMarker(marker)
-        map.animateCamera(
-            CameraUpdateFactory.newLatLngZoom(coordinates, 18f),
-            4000,
-            null
-        )
+    private fun getDeviceLocation() {
+        try {
+            // Si los permisos de ubicación están habilitados
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                fusedLocationClient.lastLocation
+                    .addOnSuccessListener { location: Location? ->
+                        // Se obtiene la última ubicación conocida
+                        location?.let {
+                            val coordinates = LatLng(it.latitude, it.longitude)
+                            val marker = MarkerOptions().position(coordinates).title("Ubicación Actual")
+                            map.addMarker(marker)
+                            map.animateCamera(
+                                CameraUpdateFactory.newLatLngZoom(coordinates, 18f),
+                                4000,
+                                null
+                            )
+                        }
+                    }
+            }
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+        }
     }
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
@@ -163,12 +178,12 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
         permissions: Array<String>,
         grantResults: IntArray
     ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults) // Agrega esta línea
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         when (requestCode) {
             PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION -> {
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    onMapReady(map)
+                    getDeviceLocation()
                 } else {
                     Toast.makeText(this, "Permiso de ubicación denegado", Toast.LENGTH_SHORT).show()
                 }
