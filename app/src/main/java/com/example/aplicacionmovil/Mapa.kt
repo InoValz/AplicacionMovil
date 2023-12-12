@@ -7,8 +7,6 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.MenuItem
-import android.view.View
-import android.widget.RelativeLayout
 import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
@@ -99,40 +97,17 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
         map = googleMap
         createMarker()
 
-        // Desactivar el comportamiento predeterminado de "Mi ubicación"
-        map.uiSettings.isMyLocationButtonEnabled = false
-
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            // Agregar botón de "Ir a mi ubicación" personalizado
-            val myLocationButton = findViewById<View>(Integer.parseInt("1")).parent as View
-            val locationButton = (myLocationButton.parent as View).findViewById<View>(Integer.parseInt("2"))
-            val layoutParams = locationButton.layoutParams as RelativeLayout.LayoutParams
-            // Cambiar la posición del botón de "Ir a mi ubicación"
-            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, 0)
-            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE)
-            layoutParams.setMargins(0, 0, 30, 30) // Ajustar márgenes según sea necesario
-
-            // Agregar botón de "Ir a mi ubicación"
-            map.isMyLocationEnabled = true
-
-            // Agregar botón de zoom
-            map.uiSettings.isZoomControlsEnabled = true
-
-            // Establecer un listener para el botón de "Ir a mi ubicación"
-            map.setOnMyLocationButtonClickListener {
-                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                    location?.let {
-                        val currentLatLng = LatLng(location.latitude, location.longitude)
-                        map.addMarker(MarkerOptions().position(currentLatLng).title("Mi Ubicación"))
-                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f))
-                    }
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                location?.let {
+                    val currentLatLng = LatLng(location.latitude, location.longitude)
+                    map.addMarker(MarkerOptions().position(currentLatLng).title("Mi Ubicación"))
+                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f))
                 }
-                // Devuelve 'true' para que no maneje el evento predeterminado (que sería abrir Google Maps)
-                true
             }
         } else {
             ActivityCompat.requestPermissions(
@@ -142,6 +117,8 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
             )
         }
     }
+
+
     private fun createMarker() {
         val coordinates = LatLng(-37.46973, -72.35366)
         val marker = MarkerOptions().position(coordinates).title("Los Angeles Chile")
