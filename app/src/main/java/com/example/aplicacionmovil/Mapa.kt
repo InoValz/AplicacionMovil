@@ -115,6 +115,9 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
             )
         }
 
+        val uiSettings = map.uiSettings
+        uiSettings.isMyLocationButtonEnabled = true
+
     }
 
     private fun getDeviceLocation() {
