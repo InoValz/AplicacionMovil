@@ -98,11 +98,20 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
         map = googleMap
         createMarker()
 
+        // Habilitar la capa de botones de herramientas
+        map.uiSettings.isZoomControlsEnabled = true
+        map.uiSettings.isCompassEnabled = true
+        map.isMyLocationEnabled = true
+
+
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
+            // Agregar botón de "Ir a mi ubicación"
+
+            // Obtener la ubicación del usuario y centrar el mapa en ella
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                 location?.let {
                     val currentLatLng = LatLng(location.latitude, location.longitude)
@@ -118,6 +127,7 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
             )
         }
     }
+
 
     private fun createMarker() {
         val coordinates = LatLng(-37.46973, -72.35366)
