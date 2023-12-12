@@ -8,6 +8,8 @@ import android.content.res.Configuration
 import android.location.Location
 import android.os.Bundle
 import android.view.MenuItem
+import android.view.View
+import android.widget.RelativeLayout
 import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
@@ -115,13 +117,8 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
             )
         }
 
-        val uiSettings = map.uiSettings
-        uiSettings.isMyLocationButtonEnabled = true
-
-        map.setOnMyLocationButtonClickListener {
-            getDeviceLocation()
-            true
-        }
+        map.isMyLocationEnabled = true
+        map.getUiSettings().isZoomControlsEnabled = true
 
     }
 
