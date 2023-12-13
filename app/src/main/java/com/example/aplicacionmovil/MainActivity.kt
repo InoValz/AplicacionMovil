@@ -20,7 +20,6 @@ import com.google.firebase.database.FirebaseDatabase
 
 class MainActivity : AppCompatActivity() {
 
-    //private lateinit var et_Rut: TextInputEditText
     private lateinit var et_Correo: TextInputEditText
     private lateinit var et_Contraseña: TextInputEditText
     private lateinit var b_iniciarSesion: Button
@@ -37,7 +36,6 @@ class MainActivity : AppCompatActivity() {
         val tv_CrearCuenta = findViewById<TextView>(R.id.tv_CrearCuenta)
         val tv_ReestablecerClave = findViewById<TextView>(R.id.tv_ReestablecerClave)
 
-        //et_Rut = findViewById(R.id.et_Rut)
         et_Correo = findViewById(R.id.et_Correo)
         et_Contraseña = findViewById(R.id.et_Contraseña)
         b_iniciarSesion = findViewById(R.id.b_iniciarSesion)
@@ -46,23 +44,8 @@ class MainActivity : AppCompatActivity() {
 
         tv_ReestablecerClave.setOnClickListener {startActivity(Intent(this, RestablecerClave::class.java))}
 
-        //et_Rut.addTextChangedListener(textWatcher)
         et_Correo.addTextChangedListener(textWatcher)
         et_Contraseña.addTextChangedListener(textWatcher)
-
-        /*val rutFilter = InputFilter { source, start, end, _, _, _ ->
-            val input = source.subSequence(start, end).toString()
-            val allowedChars = "0123456789kK-"
-            val validInput = input.filter { allowedChars.contains(it) }
-            if (validInput.length != input.length) {
-                val invalidChars = input.filterNot { allowedChars.contains(it) }
-                et_Rut.error = "Caracteres no permitidos: $invalidChars"
-            } else {
-                et_Rut.error = null
-            }
-            validInput
-        }
-        et_Rut.filters = arrayOf(rutFilter)*/
 
         et_Contraseña.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -82,27 +65,6 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        /*et_Rut.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-            }
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-            }
-
-            override fun afterTextChanged(s: Editable?) {
-                val userInput = s.toString()
-                val rutPattern = Regex("^[0-9]{7,8}-[0-9kK]$")
-                if (userInput.length !in 9..10) {
-                    et_Rut.error = "RUT no valido."
-                } else if (!userInput.matches(rutPattern)) {
-                    et_Rut.error = "El RUT no tiene el formato correcto."
-                } else {
-                    et_Rut.error = null
-                }
-                updateButtonEnabledState()
-            }
-        })*/
-
         b_iniciarSesion.setOnClickListener {
             val correo = et_Correo.text.toString().trim()
             val contraseña = et_Contraseña.text.toString().trim()
@@ -117,12 +79,10 @@ class MainActivity : AppCompatActivity() {
                                 val userId = user.uid
                                 saveUserId(userId)
                             }
-                            // Inicio de sesión exitoso, redirigir a la siguiente actividad
                             val intent = Intent(this, MenuPrincipal::class.java)
                             startActivity(intent)
-                            finish() // Cerrar la actividad actual para que el usuario no pueda regresar a esta pantalla presionando "Atrás"
+                            finish()
                         } else {
-                            // Hubo un error durante el inicio de sesión
                             val error = task.exception?.message
                             Toast.makeText(this, "Error: $error", Toast.LENGTH_SHORT).show()
                         }
@@ -133,9 +93,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (currentUser != null) {
-            // El usuario ya está autenticado, redirigir a la actividad principal
             startActivity(Intent(this, MenuPrincipal::class.java))
-            finish() // Cerrar la actividad actual para que el usuario no pueda regresar a esta pantalla presionando "Atrás"
+            finish()
         }
 
 
@@ -149,7 +108,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun afterTextChanged(s: Editable?) {
-            //val input1 = et_Rut.text.toString().trim()
             val correo = et_Correo.text.toString().trim()
             val contraseña = et_Contraseña.text.toString().trim()
 

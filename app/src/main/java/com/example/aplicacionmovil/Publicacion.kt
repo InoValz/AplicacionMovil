@@ -16,6 +16,5 @@ data class Publicacion(
     var estado: Boolean = false,
     var color: Boolean =false
 ) {
-    // Constructor sin argumentos necesario para Firebase
     constructor() : this("", "", "", "", "", "", "", "", mutableListOf())
 }

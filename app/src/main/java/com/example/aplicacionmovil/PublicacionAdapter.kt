@@ -94,23 +94,18 @@ class PublicacionAdapter : ListAdapter<Publicacion, PublicacionAdapter.Publicaci
         val btnCambiarEstado = holder.itemView.findViewById<Button>(R.id.btnCambiarEstado)
 
         if (!publicacion.estado) {
-            // Si la publicación no está revisada, cambiar el color a rojo
             val colorNoRevisado = ContextCompat.getColor(holder.itemView.context, R.color.colorNoRevisado)
             btnCambiarEstado.setBackgroundColor(colorNoRevisado)
         } else {
-            // Si la publicación está revisada, cambiar el color a verde
             val colorRevisado = ContextCompat.getColor(holder.itemView.context, R.color.colorRevisado)
             btnCambiarEstado.setBackgroundColor(colorRevisado)
         }
 
         btnCambiarEstado.setOnClickListener {
-            // Lógica para cambiar el estado
             publicacion.estado = !publicacion.estado
 
-            // Guardar el nuevo estado en la base de datos
             guardarEstadoEnBaseDeDatos(publicacion.id, publicacion.estado)
 
-            // Notificar al adaptador que solo este elemento ha cambiado
             notifyItemChanged(position)
         }
     }

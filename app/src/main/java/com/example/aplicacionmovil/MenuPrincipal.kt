@@ -286,15 +286,12 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
     }
 
     private fun mostrarDatePickerDialog() {
-        // Implementa el DatePickerDialog aquí
     }
 
     private fun mostrarTimePickerDialog() {
-        // Implementa el TimePickerDialog aquí
     }
 
     private fun mostrarMenuCategorias() {
-        // Implementa la lógica para mostrar el menú de categorías aquí
     }
 
     private fun cargarPublicaciones() {
@@ -411,10 +408,8 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                // Verificar el número de palabras
                 val words = s?.trim()?.split("\\s+".toRegex())?.size ?: 0
 
-                // Mostrar mensaje si se supera el límite
                 if (words > maxWords) {
                     ediTextComentario.error = "Límite de 200 palabras alcanzado"
                 } else {
@@ -433,7 +428,6 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
             val database = FirebaseDatabase.getInstance()
             val reference = database.getReference("comentarios")
 
-            // Verificar el número de comentarios existentes
             reference.orderByChild("publicacionId").equalTo(publicacion.id).addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     val comentariosCount = dataSnapshot.childrenCount.toInt()
@@ -455,7 +449,6 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
 
                                     reference.child(comentarioId).setValue(comentario).addOnCompleteListener { task ->
                                         if (task.isSuccessful) {
-                                            // Realiza las acciones necesarias después de publicar el comentario
                                             dialog.dismiss()
                                             Toast.makeText(this@MenuPrincipal, "Comentario exitoso", Toast.LENGTH_SHORT).show()
                                         } else {
@@ -473,7 +466,6 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 }
 
                 override fun onCancelled(databaseError: DatabaseError) {
-                    // Handle error
                 }
             })
         }
@@ -497,7 +489,6 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
         val recyclerViewComentarios = dialog.findViewById<RecyclerView>(R.id.recyclerViewComentarios)
         val comentariosAdapter = ComentariosAdapter()
 
-        // Obtén los comentarios para la publicación específica desde la base de datos
         val reference = FirebaseDatabase.getInstance().getReference("comentarios")
         reference.orderByChild("publicacionId").equalTo(publicacion.id)
             .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -515,14 +506,12 @@ class MenuPrincipal : AppCompatActivity(), NavigationView.OnNavigationItemSelect
                 }
 
                 override fun onCancelled(databaseError: DatabaseError) {
-                    // Maneja el error
                 }
             })
 
         recyclerViewComentarios.layoutManager = LinearLayoutManager(this)
         recyclerViewComentarios.adapter = comentariosAdapter
 
-        // Botón para cerrar el diálogo de comentarios
         val btnCerrar = dialog.findViewById<ImageButton>(R.id.btnCerrar)
         btnCerrar.setOnClickListener {
             dialog.dismiss()

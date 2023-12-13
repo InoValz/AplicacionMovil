@@ -39,10 +39,8 @@ class RestablecerClave : AppCompatActivity() {
                 auth.sendPasswordResetEmail(correo)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            // Correo de restablecimiento enviado con éxito
                             Toast.makeText(this, "Se ha enviado un correo de restablecimiento a $correo", Toast.LENGTH_SHORT).show()
                         } else {
-                            // Hubo un error al enviar el correo de restablecimiento
                             Toast.makeText(this, "Error al enviar el correo de restablecimiento. Por favor, intenta nuevamente.", Toast.LENGTH_SHORT).show()
                         }
                     }

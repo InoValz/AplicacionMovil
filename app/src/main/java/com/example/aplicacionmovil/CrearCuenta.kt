@@ -197,7 +197,6 @@ class CrearCuenta : AppCompatActivity() {
 
     private fun signOut() {
         FirebaseAuth.getInstance().signOut()
-        // Borra el ID del usuario de las preferencias compartidas
         val sharedPreferences = getSharedPreferences("Preferencias", Context.MODE_PRIVATE)
         sharedPreferences.edit().remove("UserId").apply()
     }

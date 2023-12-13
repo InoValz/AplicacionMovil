@@ -71,7 +71,6 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
             }
             R.id.nav_mapa2 -> {
                 Toast.makeText(this, "Mapa", Toast.LENGTH_SHORT).show()
-                // No es necesario crear una nueva instancia de Mapa, ya estás en Mapa
             }
             R.id.nav_notificaciones -> {
                 Toast.makeText(this, "Notificaciones", Toast.LENGTH_SHORT).show()
@@ -99,17 +98,15 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
+        map.mapType = GoogleMap.MAP_TYPE_TERRAIN
 
-        // Solicitar permisos de ubicación
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            // Permiso ya concedido
             getDeviceLocation()
         } else {
-            // Solicitar permiso si no se ha concedido
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
@@ -124,7 +121,6 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
 
     private fun getDeviceLocation() {
         try {
-            // Si los permisos de ubicación están habilitados
             if (ActivityCompat.checkSelfPermission(
                     this,
                     Manifest.permission.ACCESS_FINE_LOCATION
@@ -132,7 +128,6 @@ class Mapa : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListene
             ) {
                 fusedLocationClient.lastLocation
                     .addOnSuccessListener { location: Location? ->
-                        // Se obtiene la última ubicación conocida
                         location?.let {
                             val coordinates = LatLng(it.latitude, it.longitude)
                             val marker = MarkerOptions().position(coordinates).title("Ubicación Actual")
